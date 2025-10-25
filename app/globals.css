@@ -4,7 +4,8 @@ html, body {
   padding: 0;
   margin: 0;
   font-family: system-ui, sans-serif;
-  background-color: #f9f9f9;
+  height: 100%;
+  background: linear-gradient(to bottom, #1E120B, #BB9457);
 }
 
 a {
@@ -15,3 +16,74 @@ a {
 * {
   box-sizing: border-box;
 }
+
+#__next {
+  height: 100%;
+}
+
+/* SPLASH SCREEN */
+.page-container {
+  padding-top: 92px;
+  padding-left: 26.67px;
+  padding-right: 26.67px;
+}
+
+.title-text {
+  color: var(--Foundation-Yellow-Normal, #BB9457);
+  font-family: 'Inter', sans-serif;
+  font-size: 34.644px;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.description-text {
+  color: #F1E8E8;
+  font-family: 'Inter', sans-serif;
+  font-size: 22.208px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 26.65px; /* 120% */
+}
+
+.dashboard-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: auto;
+  width: 100%;
+  padding: 6.667px;
+  margin-top: 59.33px;
+
+  border-radius: 10.667px;
+  background: var(--Foundation-Yellow-Normal, #BB9457);
+
+  color: #170E08; 
+  text-align: center;
+  font-family: 'Inter', sans-serif;
+  font-size: 22.208px;
+  font-weight: 700;
+  line-height: 26.65px; 
+  cursor: pointer;
+  border: none;
+}
+
+.info-container {
+  width: 100%;
+  height: auto;
+  padding: 0.1px 13.33px;
+  align-items: center;
+  border-radius: 10.667px;
+  opacity: 0.5;
+  background: var(--Foundation-Brown-Darker, #170E08);
+  margin-top: 26.67px;
+}
+
+.info-text {
+  color: #F1E8E8;
+  font-family: 'Inter', sans-serif;
+  font-size: 11.548px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 13.857px; 
+}
+/* END OF SPLASH SCREEN */
