@@ -220,7 +220,7 @@ a {
   gap: 16px;
 }
 
-.port-item-text.unavailable {
+.port-item-text[data-status="Unavailable"] {
   color: var(--foundation-yellow-dark-hover, #998A64);
   font-weight: 400;
 }

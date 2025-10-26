@@ -25,21 +25,21 @@ export default function Dashboard() {
           {/* LEFT PORT LIST */}
             <div className="port-left-items">
               <div className="port-item">
-                <div className="port-item-text">
+                <div className="port-item-text" data-status="Unavailable">
                   <span className="port-name">USB-A 1</span>
                   <span className="port-status">Available</span>
                 </div>
                 <div className="port-line"></div>
               </div>
               <div className="port-item">
-                <div className="port-item-text">
+                <div className="port-item-text" data-status="Available">
                   <span className="port-name">USB-A 2</span>
                   <span className="port-status">Available</span>
                 </div>
                 <div className="port-line"></div>
               </div>
               <div className="port-item">
-                <div className="port-item-text">
+                <div className="port-item-text" data-status="Available">
                   <span className="port-name">Outlet</span>
                   <span className="port-status">Available</span>
                 </div>
@@ -50,14 +50,14 @@ export default function Dashboard() {
           {/* RIGHT PORT LIST */}  
           <div className="port-right-items">
             <div className="port-item">
-              <div className="port-item-text">
+              <div className="port-item-text" data-status="Available">
                 <span className="port-name">USB-C 1</span>
                 <span className="port-status">Available</span>
               </div>
               <div className="port-line"></div>
             </div>
             <div className="port-item">
-              <div className="port-item-text">
+              <div className="port-item-text" data-status="Unavailable">
                 <span className="port-name">USB-C 2</span>
                 <span className="port-status">Unavailable</span>
               </div>
