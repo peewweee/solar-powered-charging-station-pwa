@@ -96,8 +96,8 @@ a {
 }
 /* END OF SPLASH SCREEN */
 
-/* DASHBOARD */
 
+/* DASHBOARD */
 .dashboard-container {
   padding-top: 68px;
   padding-left: 26.67px;
@@ -113,6 +113,7 @@ a {
   margin: 0;
 }
 
+/* DASHBOARD - WIFI */
 .wifi-container {
   margin-top: 19px;
   padding: 9.67px;
@@ -151,12 +152,92 @@ a {
   font-weight: 400;
 }
 
+/* DASHBOARD - LINE */
 .line-separator {
   margin-top: 26.67px;
   width: 100%;
   height: 0.333px;
   background-color: #998A64;
 }
+
+/* DASHBOARD - AVAILABLE PORTS*/
+.port-container {
+  margin-top: 13px;
+}
+
+.port-title {
+  margin: 0;
+  color: var(--Foundation-Red-Light, #F1E8E8);
+  font-family: 'Inter', sans-serif;
+  font-size: 14.213px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 14.213px;
+}
+
+.port-list-container {
+  margin-top: 10px;
+  padding: 13.33px;
+  width: 100%;
+  border-radius: 10.667px;
+  background: var(--foundation-brown-dark-active, #1E120B);
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  position: relative;
+  gap: 0;
+  box-sizing: border-box;
+}
+
+.port-left-items, .port-right-items {
+  display: flex;
+  flex-direction: column;
+  gap: 12.67px;
+  width: 50%;
+  box-sizing: border-box;
+}
+
+.port-left-items {
+  padding-right: 6.67px;
+}
+
+.port-right-items {
+  padding-left: 6.67px;
+}
+
+.port-item {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.port-item-text {
+  color: var(--Foundation-Red-Light, #F1E8E8);
+  font-family: 'Inter', sans-serif;
+  font-size: 11.548px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 11.548px;
+  display: flex;
+  width: 100%;
+  gap: 16px;
+}
+
+.port-item-text.unavailable {
+  color: var(--foundation-yellow-dark-hover, #998A64);
+  font-weight: 400;
+}
+
+.port-name {
+  width: 50px;
+}
+
+.port-line {
+  height: 1px;
+  background-color: #F1E8E8;
+  width: 100%;
+}
+
 /*!****************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************!*\
   !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[2].use[1]!./node_modules/next/dist/build/webpack/loaders/next-font-loader/index.js??ruleSet[1].rules[14].oneOf[2].use[2]!./node_modules/next/font/google/target.css?{"path":"app\\layout.tsx","import":"Geist","arguments":[{"variable":"--font-geist-sans","subsets":["latin"]}],"variableName":"geistSans"} ***!
   \****************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************/
