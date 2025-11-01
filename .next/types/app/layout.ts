@@ -1,4 +1,4 @@
-// File: C:\Users\Phoebe Rhone Gangoso\Downloads\PWA\solar-powered-charging-station-pwa\app\layout.tsx
+// File: C:\Users\joshua\Documents\devapplications\solar-powered-charging-station-pwa\app\layout.tsx
 import * as entry from '../../../app/layout.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
