@@ -177,7 +177,7 @@ a {
   padding: 13.33px;
   width: 100%;
   border-radius: 10.667px;
-  background: var(--foundation-brown-dark-active, #1E120B);
+  background: rgba(30, 18, 11, 0.3);
   display: flex;
   flex-direction: row;
   justify-content: space-between;
@@ -233,4 +233,10 @@ a {
   height: 1px;
   background-color: #F1E8E8;
   width: 100%;
+}
+
+@media (max-width: 600px) {
+  .dashboard-container {
+    overflow-x: auto;
+  }
 }

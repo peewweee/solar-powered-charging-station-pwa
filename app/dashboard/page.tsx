@@ -4,26 +4,23 @@ import React, { useState, useEffect } from "react";
 import BatteryGauge from "react-battery-gauge"; // npm install react-battery-gauge
 
 export default function Dashboard() {
-  // --- State Logic from new code ---
-  const [wifiTime, setWifiTime] = useState(59 * 60 + 45); // 59:45 initial
+  const [wifiTime, setWifiTime] = useState(59 * 60 + 45);
   const [batteryPercentage, setBatteryPercentage] = useState(60);
   const [isCharging, setIsCharging] = useState(true);
 
-  // Wi-Fi countdown effect
+  // Wi-Fi countdown
   useEffect(() => {
     if (wifiTime <= 0) return;
-    const timer = setInterval(() => {
-      setWifiTime((prev) => prev - 1);
-    }, 1000);
+    const timer = setInterval(() => setWifiTime((prev) => prev - 1), 1000);
     return () => clearInterval(timer);
   }, [wifiTime]);
 
-  // Battery simulation effect
+  // Battery simulation
   useEffect(() => {
     const interval = setInterval(() => {
       if (!isCharging) return;
       setBatteryPercentage((prev) => {
-        const change = Math.floor(Math.random() * 3) - 1; // -1, 0, +1
+        const change = Math.floor(Math.random() * 3) - 1;
         let next = prev + change;
         if (next > 100) next = 100;
         if (next < 0) next = 0;
@@ -33,7 +30,6 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, [isCharging]);
 
-  // Helper: format seconds to MM:SS
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -44,7 +40,7 @@ export default function Dashboard() {
     <div className="dashboard-container">
       <h2 className="dashboard-title">Dashboard</h2>
 
-      {/* WIFI REMAINING TIME SECTION */}
+      {/* WIFI REMAINING TIME */}
       <div className="wifi-container">
         <div className="wifi-time">{formatTime(wifiTime)}</div>
         <div className="wifi-text">
@@ -56,122 +52,104 @@ export default function Dashboard() {
 
       <div className="line-separator"></div>
 
-      {/* AVAILABLE PORTS SECTION */}
+      {/* AVAILABLE PORTS */}
       <div className="port-container">
         <h3 className="port-title">Available Ports</h3>
         <div className="port-list-container">
-          {/* LEFT PORT LIST */}
           <div className="port-left-items">
-            <div className="port-item">
-              <div className="port-item-text" data-status="Unavailable">
-                <span className="port-name">USB-A 1</span>
-                <span className="port-status">Unavailable</span>
-              </div>
-              <div className="port-line"></div>
-            </div>
-            <div className="port-item">
-              <div className="port-item-text" data-status="Available">
-                <span className="port-name">USB-A 2</span>
-                <span className="port-status">Available</span>
-              </div>
-              <div className="port-line"></div>
-            </div>
-            <div className="port-item">
-              <div className="port-item-text" data-status="Available">
-                <span className="port-name">Outlet</span>
-                <span className="port-status">Available</span>
-              </div>
-              <div className="port-line"></div>
-            </div>
+            <PortItem name="USB-A 1" status="Unavailable" />
+            <PortItem name="USB-A 2" status="Available" />
+            <PortItem name="Outlet" status="Available" />
           </div>
-
-          {/* RIGHT PORT LIST */}
           <div className="port-right-items">
-            <div className="port-item">
-              <div className="port-item-text" data-status="Available">
-                <span className="port-name">USB-C 1</span>
-                <span className="port-status">Available</span>
-              </div>
-              <div className="port-line"></div>
-            </div>
-            <div className="port-item">
-              <div className="port-item-text" data-status="Unavailable">
-                <span className="port-name">USB-C 2</span>
-                <span className="port-status">Unavailable</span>
-              </div>
-              <div className="port-line"></div>
-            </div>
+            <PortItem name="USB-C 1" status="Available" />
+            <PortItem name="USB-C 2" status="Unavailable" />
           </div>
         </div>
       </div>
 
-      {/* LINE SEPARATOR */}
-      <div className="line-separator"></div>
-
-      {/* BATTERY STATUS SECTION */}
+      {/* BATTERY + WEATHER ROW */}
       <div
         style={{
-          marginTop: "20px",
-          padding: "13.33px",
-          borderRadius: "10.667px",
-          background: "#1E120B",
+          marginTop: "13px",
           display: "flex",
-          alignItems: "center",
           justifyContent: "space-between",
-          gap: "16px",
+          alignItems: "flex-start",
+          gap: "10px",
+          flexWrap: "nowrap",
         }}
       >
-        <div style={{ display: "flex", flexDirection: "column" }}>
+        {/* BATTERY */}
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "6px" }}>
           <h3 className="port-title">Battery Percentage</h3>
-          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-            <BatteryGauge value={batteryPercentage} size={60} />
-            <span
-              style={{
-                color: "#F1E8E8",
-                fontSize: "20px",
-                fontWeight: "bold",
-              }}
-            >
-              {batteryPercentage}%
-            </span>
+          <div
+            style={{
+              marginTop: "10px",
+              background: "rgba(67, 17, 16, 0.3)",
+              height: "53.3px",
+              borderRadius: "10.667px",
+              padding: "13px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              color: "#F1E8E8",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+              <BatteryGauge value={batteryPercentage} size={60} />
+              <span style={{ fontSize: "20px", fontWeight: "bold" }}>
+                {batteryPercentage}%
+              </span>
+            </div>
           </div>
         </div>
 
-      </div>
-
-      {/* WEATHER SECTION (placeholder for API) */}
-      <div
-        style={{
-          marginTop: "20px",
-          padding: "13.33px",
-          borderRadius: "10.667px",
-          background: "#321E12",
-          color: "#F1E8E8",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <h3 className="port-title">Weather</h3>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <span style={{ fontSize: "28px", fontWeight: "bold" }}>21°</span>
-          <span>Sunny ☀️</span>
+        {/* WEATHER */}
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "6px" }}>
+          <h3 className="port-title">Weather</h3>
+          <div
+            style={{
+              marginTop: "10px",
+              background: "rgba(67, 17, 16, 0.3)",
+              height: "53.3px",
+              borderRadius: "10.667px",
+              padding: "13px",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              color: "#F1E8E8",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <span style={{ fontSize: "28px", fontWeight: "bold" }}>21°</span>
+              <span>Sunny ☀️</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* ANNOUNCEMENTS SECTION */}
-      <div style={{ marginTop: "30px" }}>
+      {/* ANNOUNCEMENTS */}
+      <div style={{ marginTop: "30px", display: "flex", flexDirection: "column", gap: "6px" }}>
+        <h3 className="port-title">Announcements</h3>
         <Announcements />
       </div>
     </div>
   );
 }
 
-/**
- * Announcements Card
- */
+/* --- Helper Component --- */
+const PortItem = ({ name, status }: { name: string; status: string }) => (
+  <div className="port-item">
+    <div className="port-item-text" data-status={status}>
+      <span className="port-name">{name}</span>
+      <span className="port-status">{status}</span>
+    </div>
+    <div className="port-line"></div>
+  </div>
+);
+
+/* --- Announcements --- */
 const Announcements = () => {
-  // Mock data for announcements
   const announcements = [
     {
       text: "Clarification on the List of All Applicants First and Second...",
@@ -188,49 +166,50 @@ const Announcements = () => {
   ];
 
   return (
-    <div className="rounded-lg bg-black/30 p-4 sm:p-6">
-      <h2 className="mb-4 text-2xl font-bold text-neutral-200">Announcements</h2>
-      <div className="rounded-lg bg-white p-4 text-gray-900 shadow-inner">
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          {/* Left Column: Text */}
-          <div>
-            <h3 className="mb-2 font-bold text-red-700">
-              Announcements and Advisories
-            </h3>
-            <div className="space-y-3">
-              {announcements.map((item, i) => (
-                <div key={i}>
-                  <a
-                    href="#"
-                    className="text-sm font-medium text-blue-800 hover:underline"
-                  >
-                    {item.text}
-                  </a>
-                  <p className="text-xs text-gray-500">{item.date}</p>
-                </div>
-              ))}
-            </div>
+    <div
+      className="rounded-lg bg-white p-4 text-gray-900 shadow-inner overflow-y-auto"
+      style={{ height: "240px" }}
+    >
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        {/* Left Column */}
+        <div>
+          <h3 className="mb-2 font-bold text-red-700">
+            Announcements and Advisories
+          </h3>
+          <div className="space-y-3">
+            {announcements.map((item, i) => (
+              <div key={i}>
+                <a
+                  href="#"
+                  className="text-sm font-medium text-blue-800 hover:underline"
+                >
+                  {item.text}
+                </a>
+                <p className="text-xs text-gray-500">{item.date}</p>
+              </div>
+            ))}
           </div>
-          {/* Right Column: Image */}
-          <div>
-            <h3 className="mb-2 font-bold text-gray-700">
-              Latest News from the University
-            </h3>
-            <div className="overflow-hidden rounded-lg border border-gray-200">
-              <img
-                src="https://placehold.co/600x400/e2e8f0/333333?text=University+Event"
-                alt="University event"
-                className="h-auto w-full object-cover"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src =
-                    "https://placehold.co/600x400/e2e8f0/333333?text=Image+Not+Found";
-                }}
-              />
-              <p className="p-2 text-xs text-gray-600">
-                CHK champions inclusivity: organized seminar empowering visually
-                impaired youth
-              </p>
-            </div>
+        </div>
+
+        {/* Right Column */}
+        <div>
+          <h3 className="mb-2 font-bold text-gray-700">
+            Latest News from the University
+          </h3>
+          <div className="overflow-hidden rounded-lg border border-gray-200">
+            <img
+              src="https://placehold.co/600x400/e2e8f0/333333?text=University+Event"
+              alt="University event"
+              className="h-auto w-full object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src =
+                  "https://placehold.co/600x400/e2e8f0/333333?text=Image+Not+Found";
+              }}
+            />
+            <p className="p-2 text-xs text-gray-600">
+              CHK champions inclusivity: organized seminar empowering visually
+              impaired youth
+            </p>
           </div>
         </div>
       </div>
