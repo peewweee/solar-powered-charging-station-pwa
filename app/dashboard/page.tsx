@@ -129,7 +129,7 @@ export default function Dashboard() {
       </div>
 
       {/* ANNOUNCEMENTS */}
-      <div style={{ marginTop: "30px", display: "flex", flexDirection: "column", gap: "6px" }}>
+      <div style={{ marginTop: "12.67px", display: "flex", flexDirection: "column", gap: "6px" }}>
         <h3 className="port-title">Announcements</h3>
         <Announcements />
       </div>
@@ -168,7 +168,7 @@ const Announcements = () => {
   return (
     <div
       className="rounded-lg bg-white p-4 text-gray-900 shadow-inner overflow-y-auto"
-      style={{ height: "240px" }}
+      style={{ marginTop: "10.33px", height: "240px", borderRadius: "21.333px" }}
     >
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {/* Left Column */}
