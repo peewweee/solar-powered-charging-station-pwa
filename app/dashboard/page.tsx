@@ -109,7 +109,7 @@ export default function Dashboard() {
             style={{
               marginTop: "10px",
               background: "rgba(67, 17, 16, 0.3)",
-              height: "53.3px",
+              height: "53.33px",
               borderRadius: "10.667px",
               padding: "13px",
               display: "flex",
@@ -134,7 +134,7 @@ export default function Dashboard() {
             style={{
               marginTop: "10px",
               background: "rgba(67, 17, 16, 0.3)",
-              height: "53.3px",
+              height: "53.33px",
               borderRadius: "10.667px",
               padding: "13px",
               display: "flex",
@@ -147,19 +147,16 @@ export default function Dashboard() {
               <span style={{ fontSize: "16px" }}>Loading...</span>
             ) : weather ? (
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <span style={{ fontSize: "12px", fontWeight: "400" }}>
+                    {Math.round(weather.temp)}°C
+                </span>
+                <span style={{ fontSize: "12px" }}>{weather.desc}</span>
                 <img
                   src={`https://openweathermap.org/img/wn/${weather.icon}.png`}
                   alt={weather.desc}
                   width={32}
                   height={32}
                 />
-                <div>
-                  <span style={{ fontSize: "20px", fontWeight: "bold" }}>
-                    {Math.round(weather.temp)}°C
-                  </span>
-                  <br />
-                  <span style={{ fontSize: "12px" }}>{weather.desc}</span>
-                </div>
               </div>
             ) : (
               <span style={{ fontSize: "16px" }}>Weather unavailable</span>
