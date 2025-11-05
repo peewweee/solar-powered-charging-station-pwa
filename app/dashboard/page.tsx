@@ -7,6 +7,8 @@ export default function Dashboard() {
   const [wifiTime, setWifiTime] = useState(59 * 60 + 45);
   const [batteryPercentage, setBatteryPercentage] = useState(60);
   const [isCharging, setIsCharging] = useState(true);
+  const [weather, setWeather] = useState<{ temp: number; desc: string; icon: string } | null>(null);
+  const [loadingWeather, setLoadingWeather] = useState(true);
 
   // Wi-Fi countdown
   useEffect(() => {
@@ -29,6 +31,27 @@ export default function Dashboard() {
     }, 3000);
     return () => clearInterval(interval);
   }, [isCharging]);
+
+  // Fetch weather data
+  useEffect(() => {
+    async function fetchWeather() {
+      try {
+        const res = await fetch("/api/weather");
+        const data = await res.json();
+        setWeather({
+          temp: data.temperature,
+          desc: data.description,
+          icon: data.icon,
+        });
+      } catch (error) {
+        console.error("Error fetching weather:", error);
+      } finally {
+        setLoadingWeather(false);
+      }
+    }
+
+    fetchWeather();
+  }, []);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -120,10 +143,27 @@ export default function Dashboard() {
               color: "#F1E8E8",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <span style={{ fontSize: "28px", fontWeight: "bold" }}>21°</span>
-              <span>Sunny ☀️</span>
-            </div>
+            {loadingWeather ? (
+              <span style={{ fontSize: "16px" }}>Loading...</span>
+            ) : weather ? (
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <img
+                  src={`https://openweathermap.org/img/wn/${weather.icon}.png`}
+                  alt={weather.desc}
+                  width={32}
+                  height={32}
+                />
+                <div>
+                  <span style={{ fontSize: "20px", fontWeight: "bold" }}>
+                    {Math.round(weather.temp)}°C
+                  </span>
+                  <br />
+                  <span style={{ fontSize: "12px" }}>{weather.desc}</span>
+                </div>
+              </div>
+            ) : (
+              <span style={{ fontSize: "16px" }}>Weather unavailable</span>
+            )}
           </div>
         </div>
       </div>
@@ -173,16 +213,11 @@ const Announcements = () => {
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {/* Left Column */}
         <div>
-          <h3 className="mb-2 font-bold text-red-700">
-            Announcements and Advisories
-          </h3>
+          <h3 className="mb-2 font-bold text-red-700">Announcements and Advisories</h3>
           <div className="space-y-3">
             {announcements.map((item, i) => (
               <div key={i}>
-                <a
-                  href="#"
-                  className="text-sm font-medium text-blue-800 hover:underline"
-                >
+                <a href="#" className="text-sm font-medium text-blue-800 hover:underline">
                   {item.text}
                 </a>
                 <p className="text-xs text-gray-500">{item.date}</p>
@@ -193,9 +228,7 @@ const Announcements = () => {
 
         {/* Right Column */}
         <div>
-          <h3 className="mb-2 font-bold text-gray-700">
-            Latest News from the University
-          </h3>
+          <h3 className="mb-2 font-bold text-gray-700">Latest News from the University</h3>
           <div className="overflow-hidden rounded-lg border border-gray-200">
             <img
               src="https://placehold.co/600x400/e2e8f0/333333?text=University+Event"
@@ -207,8 +240,7 @@ const Announcements = () => {
               }}
             />
             <p className="p-2 text-xs text-gray-600">
-              CHK champions inclusivity: organized seminar empowering visually
-              impaired youth
+              CHK champions inclusivity: organized seminar empowering visually impaired youth
             </p>
           </div>
         </div>
