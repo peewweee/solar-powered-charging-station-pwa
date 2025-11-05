@@ -6,7 +6,7 @@ export default function Home() {
   const router = useRouter();
 
   const goToDashboard = () => {
-    router.push("/dashboard"); // Change if your dashboard route is different
+    router.push("/dashboard"); 
   };
 
   return (
