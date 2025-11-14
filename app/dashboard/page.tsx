@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import BatteryGauge from "react-battery-gauge"; // npm install react-battery-gauge
+import StationStatus from '../components/StationStatus';
 
 export default function Dashboard() {
   const [wifiTime, setWifiTime] = useState(59 * 60 + 45);
@@ -62,7 +63,7 @@ export default function Dashboard() {
   return (
     <div className="dashboard-container">
       <h2 className="dashboard-title">Dashboard</h2>
-
+      <StationStatus />
       {/* WIFI REMAINING TIME */}
       <div className="wifi-container">
         <div className="wifi-time">{formatTime(wifiTime)}</div>
