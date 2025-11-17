@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import BatteryGauge from "react-battery-gauge"; // npm install react-battery-gauge
+import BatteryGauge from "react-battery-gauge"; 
+import StationStatus from '../components/StationStatus';
 
 export default function Dashboard() {
   const [wifiTime, setWifiTime] = useState(59 * 60 + 45);
@@ -62,6 +63,7 @@ export default function Dashboard() {
   return (
     <div className="dashboard-container">
       <h2 className="dashboard-title">Dashboard</h2>
+        <StationStatus />
 
       {/* WIFI REMAINING TIME */}
       <div className="wifi-container">
@@ -119,7 +121,35 @@ export default function Dashboard() {
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-              <BatteryGauge value={batteryPercentage} size={60} />
+              <BatteryGauge
+                value={batteryPercentage}
+                size={60}
+                customization={{
+                  batteryBody: {
+                    strokeColor: "#FFFFFF",   // outline color
+                    strokeWidth: 3,
+                    fill: "transparent",
+                    cornerRadius: 4,
+                  },
+                  batteryCap: {
+                    fill: "transparent",
+                    strokeColor: "#FFFFFF",
+                    strokeWidth: 3,
+                    cornerRadius: 2,
+                  },
+                  batteryMeter: {
+                    fill: "#FFFFFF",          // inner fill color
+                    lowBatteryFill: "#FFFFFF",
+                    noOfCells: 1,
+                  },
+                  readingText: {
+                    lightContrastColor: "#FFFFFF",
+                    darkContrastColor: "#FFFFFF",
+                    fontSize: 0, // hide built-in percentage text since you use your own
+                  },
+                }}
+              />
+
               <span style={{ fontSize: "20px", fontWeight: "bold" }}>
                 {batteryPercentage}%
               </span>
