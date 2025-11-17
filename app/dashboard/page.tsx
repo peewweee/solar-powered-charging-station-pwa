@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import BatteryGauge from "react-battery-gauge"; // npm install react-battery-gauge
-import StationStatus from '../components/StationStatus';
 
 export default function Dashboard() {
   const [wifiTime, setWifiTime] = useState(59 * 60 + 45);
@@ -63,7 +62,7 @@ export default function Dashboard() {
   return (
     <div className="dashboard-container">
       <h2 className="dashboard-title">Dashboard</h2>
-      <StationStatus />
+
       {/* WIFI REMAINING TIME */}
       <div className="wifi-container">
         <div className="wifi-time">{formatTime(wifiTime)}</div>
@@ -186,63 +185,51 @@ const PortItem = ({ name, status }: { name: string; status: string }) => (
   </div>
 );
 
-/* --- Announcements --- */
+/* --- Announcements (Website Preview) --- */
 const Announcements = () => {
-  const announcements = [
-    {
-      text: "Clarification on the List of All Applicants First and Second...",
-      date: "Posted: May 28, 2025",
-    },
-    {
-      text: "Public Advisory: Protecting the Integrity of the Admission Process",
-      date: "Posted: May 02, 2025",
-    },
-    {
-      text: "Important Announcement For Our Mid-Year Graduates",
-      date: "Posted: April 07, 2025",
-    },
-  ];
-
   return (
-    <div
-      className="rounded-lg bg-white p-4 text-gray-900 shadow-inner overflow-y-auto"
-      style={{ marginTop: "10.33px", height: "240px", borderRadius: "21.333px" }}
+    <a
+      href="https://www.pup.edu.ph/"
+      target="_blank"
+      rel="noopener noreferrer"
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        background: "rgba(67, 17, 16, 0.35)",
+        borderRadius: "12px",
+        padding: "12px",
+        width: "100%",
+        height: "240px",
+        textDecoration: "none",
+        color: "#F1E8E8",
+        overflow: "hidden",
+        cursor: "pointer",
+        transition: "0.2s",
+        marginBottom: "40px",
+      }}
+      onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(67, 17, 16, 0.5)")}
+      onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(67, 17, 16, 0.35)")}
     >
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        {/* Left Column */}
-        <div>
-          <h3 className="mb-2 font-bold text-red-700">Announcements and Advisories</h3>
-          <div className="space-y-3">
-            {announcements.map((item, i) => (
-              <div key={i}>
-                <a href="#" className="text-sm font-medium text-blue-800 hover:underline">
-                  {item.text}
-                </a>
-                <p className="text-xs text-gray-500">{item.date}</p>
-              </div>
-            ))}
-          </div>
-        </div>
+      {/* PREVIEW IMAGE */}
+      <div
+        style={{
+          width: "100%",
+          height: "165px",
+          background: "url('/announcements/preview.png') center/cover no-repeat",
+          borderRadius: "10px",
+          marginBottom: "10px",
+        }}
+      ></div>
 
-        {/* Right Column */}
-        <div>
-          <h3 className="mb-2 font-bold text-gray-700">Latest News from the University</h3>
-          <div className="overflow-hidden rounded-lg border border-gray-200">
-            <img
-              src="https://placehold.co/600x400/e2e8f0/333333?text=University+Event"
-              alt="University event"
-              className="h-auto w-full object-cover"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src =
-                  "https://placehold.co/600x400/e2e8f0/333333?text=Image+Not+Found";
-              }}
-            />
-            <p className="p-2 text-xs text-gray-600">
-              CHK champions inclusivity: organized seminar empowering visually impaired youth
-            </p>
-          </div>
-        </div>
+      {/* TITLE + SUBTEXT */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+        <span style={{ fontSize: "14px", fontWeight: "600" }}>
+          Polytechnic University of the Philippines
+        </span>
+        <span style={{ fontSize: "12px", opacity: 0.8 }}>
+          Click to visit website →
+        </span>
       </div>
-    </div>
+    </a>
   );
 };
