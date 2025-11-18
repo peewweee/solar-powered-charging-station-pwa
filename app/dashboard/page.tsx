@@ -10,6 +10,21 @@ export default function Dashboard() {
   const [isCharging, setIsCharging] = useState(true);
   const [weather, setWeather] = useState<{ temp: number; desc: string; icon: string } | null>(null);
   const [loadingWeather, setLoadingWeather] = useState(true);
+  const [portStatus, setPortStatus] = useState({
+    port1: 'inactive',
+    port2: 'inactive',
+    port3: 'inactive',  // USB-C 1
+    port4: 'inactive',  // USB-C 2
+    outlet: 'inactive', // Outlet
+  });
+
+  const handleBatteryUpdate = (percent: number) => {
+    setBatteryPercentage(percent);
+  };
+
+  const handlePortStatusUpdate = (ports: { port1: string; port2: string; port3: string; port4: string; outlet: string }) => {
+  setPortStatus(ports);
+  };
 
   // Wi-Fi countdown
   useEffect(() => {
@@ -48,7 +63,10 @@ export default function Dashboard() {
   return (
     <div className="dashboard-container">
       <h2 className="dashboard-title">Dashboard</h2>
-        <StationStatus onBatteryUpdate={setBatteryPercentage} />
+        <StationStatus
+        onBatteryUpdate={handleBatteryUpdate}
+        onPortStatusUpdate={handlePortStatusUpdate}
+        />
 
       {/* WIFI REMAINING TIME */}
       <div className="wifi-container">
@@ -66,17 +84,39 @@ export default function Dashboard() {
       <div className="port-container">
         <h3 className="port-title">Available Ports</h3>
         <div className="port-list-container">
+
           <div className="port-left-items">
-            <PortItem name="USB-A 1" status="Unavailable" />
-            <PortItem name="USB-A 2" status="Available" />
-            <PortItem name="Outlet" status="Available" />
+            <PortItem
+              name="USB-A 1"
+              status={portStatus.port1 === "active" ? "Unavailable" : "Available"}
+            />
+
+            <PortItem
+              name="USB-A 2"
+              status={portStatus.port2 === "active" ? "Unavailable" : "Available"}
+            />
+
+            <PortItem
+              name="Outlet"
+              status={portStatus.outlet === "active" ? "Unavailable" : "Available"}
+            />
           </div>
+
           <div className="port-right-items">
-            <PortItem name="USB-C 1" status="Available" />
-            <PortItem name="USB-C 2" status="Unavailable" />
+            <PortItem
+              name="USB-C 1"
+              status={portStatus.port3 === "active" ? "Unavailable" : "Available"}
+            />
+
+            <PortItem
+              name="USB-C 2"
+              status={portStatus.port4 === "active" ? "Unavailable" : "Available"}
+            />
           </div>
+
         </div>
       </div>
+
 
       {/* BATTERY + WEATHER ROW */}
       <div
