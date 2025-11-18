@@ -18,21 +18,6 @@ export default function Dashboard() {
     return () => clearInterval(timer);
   }, [wifiTime]);
 
-  // Battery simulation
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (!isCharging) return;
-      setBatteryPercentage((prev) => {
-        const change = Math.floor(Math.random() * 3) - 1;
-        let next = prev + change;
-        if (next > 100) next = 100;
-        if (next < 0) next = 0;
-        return next;
-      });
-    }, 3000);
-    return () => clearInterval(interval);
-  }, [isCharging]);
-
   // Fetch weather data
   useEffect(() => {
     async function fetchWeather() {
@@ -63,7 +48,7 @@ export default function Dashboard() {
   return (
     <div className="dashboard-container">
       <h2 className="dashboard-title">Dashboard</h2>
-        <StationStatus />
+        <StationStatus onBatteryUpdate={setBatteryPercentage} />
 
       {/* WIFI REMAINING TIME */}
       <div className="wifi-container">
