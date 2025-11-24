@@ -104,7 +104,7 @@ export default function Dashboard() {
 
       {/* WIFI REMAINING TIME (Updated) */}
       <div className="wifi-container">
-        <div className="wifi-time" style={{ color: isConnected ? '#2E7D32' : '#d32f2f' }}>
+        <div className="wifi-time" style={{ color: isConnected ? '#998A64' : '#6F1D1B' }}>
             {isConnected ? formatTime(wifiTime) : "Offline"}
         </div>
         <div className="wifi-text">
