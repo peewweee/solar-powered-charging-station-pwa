@@ -1,5 +1,4 @@
 import "./globals.css";
-import Head from "next/head";
 import { Geist, Geist_Mono } from "next/font/google";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -8,15 +7,33 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <Head>
+      <head>
+        {/* Manifest */}
         <link rel="manifest" href="/manifest.json" />
-        <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
-        <meta name="theme-color" content="#4CAF50" />
-        <meta name="description" content="Solar-powered charging station" />
-        <meta name="mobile-web-app-capable" content="yes" />
+
+        {/* Favicon */}
+        <link rel="icon" href="/icons/icon-192x192.png" />
+
+        {/* Apple Touch Icons */}
+        <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192x192.png" />
+        <link rel="apple-touch-icon" sizes="512x512" href="/icons/icon-512x512.png" />
+        <link rel="apple-touch-icon" sizes="1024x1024" href="/icons/icon-1024x1024.png" />
+
+        {/* PWA Theme */}
+        <meta name="theme-color" content="#BB9457" />
+        <meta name="background-color" content="#FFFFFF" />
+
+        {/* PWA iOS Support */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-      </Head>
+
+        {/* Description */}
+        <meta
+          name="description"
+          content="SPCS: Solar Powered Charging Station with real-time monitoring."
+        />
+      </head>
+
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         {children}
       </body>
