@@ -139,7 +139,7 @@ function DashboardContent() {
           <span className="wifi-subtext">
              {isConnected ? "Remaining Time" : (
                /* LINK TO RE-SYNC TIMER IF OPENED MANUALLY */
-               <a href="http://192.168.4.1/accept" className="text-blue-600 underline text-xs">
+               <a href="http://192.168.4.1" className="text-blue-600 underline text-xs">
                  Sync Timer
                </a>
              )}
