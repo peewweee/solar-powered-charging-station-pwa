@@ -1,12 +1,33 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import React, { useEffect } from "react";
 
 export default function Home() {
-  const router = useRouter();
+  // --- LOGIC: Capture Timer Data from ESP32 URL ---
+  useEffect(() => {
+    // 1. Check if ESP32 sent us timer parameters
+    const params = new URLSearchParams(window.location.search);
+    const paramsSeconds = params.get('seconds');
+    const paramsConnected = params.get('connected');
+
+    if (paramsSeconds && paramsConnected === 'true') {
+      const secondsToAdd = parseInt(paramsSeconds, 10);
+      
+      // 2. Calculate when the session expires (Now + 60s)
+      const expiryTime = Date.now() + (secondsToAdd * 1000);
+      
+      // 3. Save to LocalStorage (The Dashboard page will read this)
+      localStorage.setItem('wifi_expiry', expiryTime.toString());
+      localStorage.setItem('wifi_connected', 'true');
+
+      // 4. Clean the URL so the user doesn't see the ugly parameters
+      window.history.replaceState({}, '', '/');
+    }
+  }, []);
 
   const goToDashboard = () => {
-    router.push("/dashboard"); 
+    // Use standard browser navigation
+    window.location.href = "/dashboard"; 
   };
 
   return (
@@ -17,6 +38,7 @@ export default function Home() {
       <p className="description-text">
         The solar-powered charging station provides free device charging and Wi-Fi access, promoting sustainability, connectivity, and academic productivity
       </p>
+      
       <button className="dashboard-button" onClick={goToDashboard}>
         Go to Dashboard
       </button>
