@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useSearchParams, useRouter } from 'next/navigation'; // Added for URL params
+import React, { useState, useEffect, Suspense } from "react";
+import { useSearchParams, useRouter } from 'next/navigation';
 import BatteryGauge from "react-battery-gauge"; 
 import StationStatus from '../components/StationStatus';
 
-export default function Dashboard() {
+// --- INNER COMPONENT: Handles Logic & Search Params ---
+function DashboardContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -33,26 +34,21 @@ export default function Dashboard() {
     setPortStatus(ports);
   };
 
-  // --- NEW: Handle URL Parameters & Timer Logic ---
+  // --- Handle URL Parameters & Timer Logic ---
   useEffect(() => {
-    // 1. Check for ESP32 redirect params (run once on mount/param change)
     const paramsSeconds = searchParams.get('seconds');
     const paramsConnected = searchParams.get('connected');
 
     if (paramsSeconds && paramsConnected === 'true') {
-      // Calculate absolute expiry time based on current time
       const secondsToAdd = parseInt(paramsSeconds, 10);
       const expiryTime = Date.now() + (secondsToAdd * 1000);
       
-      // Save to Local Storage so it survives page refreshes
       localStorage.setItem('wifi_expiry', expiryTime.toString());
       localStorage.setItem('wifi_connected', 'true');
 
-      // Clean the URL so the user doesn't see the ugly parameters
       router.replace('/dashboard');
     }
 
-    // 2. Start the Countdown Loop
     const interval = setInterval(() => {
       const storedExpiry = localStorage.getItem('wifi_expiry');
       const storedConnected = localStorage.getItem('wifi_connected');
@@ -66,14 +62,12 @@ export default function Dashboard() {
           setIsConnected(true);
           setWifiTime(timeLeftSec);
         } else {
-          // Time Expired
           setIsConnected(false);
           setWifiTime(0);
           localStorage.removeItem('wifi_expiry');
           localStorage.removeItem('wifi_connected');
         }
       } else {
-        // Not connected or no session found
         setIsConnected(false);
         setWifiTime(0);
       }
@@ -99,7 +93,6 @@ export default function Dashboard() {
         setLoadingWeather(false);
       }
     }
-
     fetchWeather();
   }, []);
 
@@ -120,7 +113,6 @@ export default function Dashboard() {
 
       {/* WIFI REMAINING TIME */}
       <div className="wifi-container">
-        {/* Color changes to Red if offline, Green if connected */}
         <div className="wifi-time" style={{ color: isConnected ? '#2E7D32' : '#d32f2f' }}>
             {isConnected ? formatTime(wifiTime) : "Offline"}
         </div>
@@ -140,39 +132,32 @@ export default function Dashboard() {
       <div className="port-container">
         <h3 className="port-title">Available Ports</h3>
         <div className="port-list-container">
-
           <div className="port-left-items">
             <PortItem
               name="USB-A 1"
               status={portStatus.port1 === "active" ? "Unavailable" : "Available"}
             />
-
             <PortItem
               name="USB-A 2"
               status={portStatus.port2 === "active" ? "Unavailable" : "Available"}
             />
-
             <PortItem
               name="Outlet"
               status={portStatus.outlet === "active" ? "Unavailable" : "Available"}
             />
           </div>
-
           <div className="port-right-items">
             <PortItem
               name="USB-C 1"
               status={portStatus.port3 === "active" ? "Unavailable" : "Available"}
             />
-
             <PortItem
               name="USB-C 2"
               status={portStatus.port4 === "active" ? "Unavailable" : "Available"}
             />
           </div>
-
         </div>
       </div>
-
 
       {/* BATTERY + WEATHER ROW */}
       <div
@@ -207,7 +192,7 @@ export default function Dashboard() {
                 size={60}
                 customization={{
                   batteryBody: {
-                    strokeColor: "#FFFFFF",   // outline color
+                    strokeColor: "#FFFFFF",
                     strokeWidth: 3,
                     fill: "transparent",
                     cornerRadius: 4,
@@ -219,18 +204,17 @@ export default function Dashboard() {
                     cornerRadius: 2,
                   },
                   batteryMeter: {
-                    fill: "#FFFFFF",          // inner fill color
+                    fill: "#FFFFFF",
                     lowBatteryFill: "#FFFFFF",
                     noOfCells: 1,
                   },
                   readingText: {
                     lightContrastColor: "#FFFFFF",
                     darkContrastColor: "#FFFFFF",
-                    fontSize: 0, // hide built-in percentage text since you use your own
+                    fontSize: 0,
                   },
                 }}
               />
-
               <span style={{ fontSize: "20px", fontWeight: "bold" }}>
                 {batteryPercentage}%
               </span>
@@ -285,7 +269,17 @@ export default function Dashboard() {
   );
 }
 
-/* --- Helper Component --- */
+// --- MAIN EXPORT: Wraps the logic in Suspense ---
+export default function Dashboard() {
+  return (
+    // The fallback is what shows while Next.js is parsing the URL parameters
+    <Suspense fallback={<div className="dashboard-container" style={{padding: '20px', textAlign: 'center', color: '#6F1D1B'}}>Loading Dashboard...</div>}>
+      <DashboardContent />
+    </Suspense>
+  );
+}
+
+/* --- Helper Components --- */
 const PortItem = ({ name, status }: { name: string; status: string }) => (
   <div className="port-item">
     <div className="port-item-text" data-status={status}>
@@ -296,7 +290,6 @@ const PortItem = ({ name, status }: { name: string; status: string }) => (
   </div>
 );
 
-/* --- Announcements (Website Preview) --- */
 const Announcements = () => {
   return (
     <a
@@ -321,7 +314,6 @@ const Announcements = () => {
       onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(67, 17, 16, 0.5)")}
       onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(67, 17, 16, 0.35)")}
     >
-      {/* PREVIEW IMAGE */}
       <div
         style={{
           width: "100%",
@@ -331,8 +323,6 @@ const Announcements = () => {
           marginBottom: "10px",
         }}
       ></div>
-
-      {/* TITLE + SUBTEXT */}
       <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
         <span style={{ fontSize: "14px", fontWeight: "600" }}>
           Polytechnic University of the Philippines
