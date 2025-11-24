@@ -21,9 +21,9 @@ function DashboardContent() {
   const [portStatus, setPortStatus] = useState({
     port1: 'inactive',
     port2: 'inactive',
-    port3: 'inactive',  // USB-C 1
-    port4: 'inactive',  // USB-C 2
-    outlet: 'inactive', // Outlet
+    port3: 'inactive',  
+    port4: 'inactive',  
+    outlet: 'inactive', 
   });
 
   const handleBatteryUpdate = (percent: number) => {
@@ -34,22 +34,30 @@ function DashboardContent() {
     setPortStatus(ports);
   };
 
-  // --- Handle URL Parameters & Timer Logic ---
+  // --- EFFECT 1: Handle URL Parameters (Run only when params change) ---
   useEffect(() => {
     const paramsSeconds = searchParams.get('seconds');
     const paramsConnected = searchParams.get('connected');
+
+    console.log("Checking URL Params:", { paramsSeconds, paramsConnected });
 
     if (paramsSeconds && paramsConnected === 'true') {
       const secondsToAdd = parseInt(paramsSeconds, 10);
       const expiryTime = Date.now() + (secondsToAdd * 1000);
       
+      console.log("Saving new session to LocalStorage:", expiryTime);
+
       localStorage.setItem('wifi_expiry', expiryTime.toString());
       localStorage.setItem('wifi_connected', 'true');
 
+      // Clean the URL
       router.replace('/dashboard');
     }
+  }, [searchParams, router]);
 
-    const interval = setInterval(() => {
+  // --- EFFECT 2: The Timer Loop (Runs independently) ---
+  useEffect(() => {
+    const checkTimer = () => {
       const storedExpiry = localStorage.getItem('wifi_expiry');
       const storedConnected = localStorage.getItem('wifi_connected');
 
@@ -62,6 +70,8 @@ function DashboardContent() {
           setIsConnected(true);
           setWifiTime(timeLeftSec);
         } else {
+          // Time Expired
+          console.log("Time expired, resetting state.");
           setIsConnected(false);
           setWifiTime(0);
           localStorage.removeItem('wifi_expiry');
@@ -71,10 +81,16 @@ function DashboardContent() {
         setIsConnected(false);
         setWifiTime(0);
       }
-    }, 1000);
+    };
+
+    // Run immediately on mount to avoid 1s delay
+    checkTimer();
+
+    // Start interval
+    const interval = setInterval(checkTimer, 1000);
 
     return () => clearInterval(interval);
-  }, [searchParams, router]);
+  }, []); // Empty dependency array ensures this loop never breaks during re-renders
 
   // --- Fetch Weather ---
   useEffect(() => {
@@ -121,7 +137,12 @@ function DashboardContent() {
           <span className="wifi-bold">Wi-Fi Status</span>
           <br />
           <span className="wifi-subtext">
-             {isConnected ? "Remaining Time" : "Connect to Station"}
+             {isConnected ? "Remaining Time" : (
+               /* LINK TO RE-SYNC TIMER IF OPENED MANUALLY */
+               <a href="http://192.168.4.1/accept" className="text-blue-600 underline text-xs">
+                 Sync Timer
+               </a>
+             )}
           </span>
         </div>
       </div>
@@ -272,7 +293,6 @@ function DashboardContent() {
 // --- MAIN EXPORT: Wraps the logic in Suspense ---
 export default function Dashboard() {
   return (
-    // The fallback is what shows while Next.js is parsing the URL parameters
     <Suspense fallback={<div className="dashboard-container" style={{padding: '20px', textAlign: 'center', color: '#6F1D1B'}}>Loading Dashboard...</div>}>
       <DashboardContent />
     </Suspense>
