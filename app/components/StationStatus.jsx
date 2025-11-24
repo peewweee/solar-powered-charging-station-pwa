@@ -1,49 +1,45 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-
-// Fetch from your own Next.js API route
-const API_URL = '/api/status';
+import { useEffect } from 'react';
+import { ref, onValue } from 'firebase/database';
+// Make sure this path points to the file you created in the previous step
+import { database } from '../firebaseConfig'; 
 
 export default function StationStatus({ onBatteryUpdate, onPortStatusUpdate }) {
 
   useEffect(() => {
-    const fetchData = () => {
-      fetch(API_URL)
-        .then((res) => {
-          if (!res.ok) {
-            return res.json().then((errData) => {
-              throw new Error(errData.error || 'Network error');
-            });
-          }
-          return res.json();
-        })
-        .then((jsonData) => {
-          // 🔋 Send battery % to page
-          if (jsonData?.batteryPercent !== undefined && onBatteryUpdate) {
-            onBatteryUpdate(jsonData.batteryPercent);
-          }
+    // 1. Connect to the exact path your ESP32 is writing to
+    // In your Arduino code: Firebase.RTDB.setJSON(&fbdo, "/station_status", &json)
+    const stationRef = ref(database, 'station_status');
 
-          // 🔌 Send ALL ports to page
-          if (jsonData?.ports && onPortStatusUpdate) {
-            onPortStatusUpdate({
-              port1: jsonData.ports.port1,
-              port2: jsonData.ports.port2,
-              port3: jsonData.ports.port3,
-              port4: jsonData.ports.port4,
-              outlet: jsonData.ports.outlet,
-            });
-          }
-        })
-        .catch(() => {})
-    };
+    // 2. Start the Real-Time Listener
+    // This function runs automatically whenever the ESP32 updates the cloud
+    const unsubscribe = onValue(stationRef, (snapshot) => {
+      const data = snapshot.val();
 
-    fetchData(); // initial fetch
-    const intervalId = setInterval(fetchData, 1000); // poll every 1s
+      // Safety check: Ensure data exists before trying to read it
+      if (data) {
+        
+        // 🔋 Update Battery
+        if (data.batteryPercent !== undefined && onBatteryUpdate) {
+          onBatteryUpdate(data.batteryPercent);
+        }
 
-    return () => clearInterval(intervalId);
+        // 🔌 Update Ports
+        // Your ESP32 sends: { port1: "active", port2: "inactive", ... }
+        // This matches exactly what the Dashboard expects.
+        if (data.ports && onPortStatusUpdate) {
+          onPortStatusUpdate(data.ports);
+        }
+      }
+    }, (error) => {
+      console.error("Firebase connection error:", error);
+    });
+
+    // 3. Cleanup: Close the connection when the user leaves the page
+    return () => unsubscribe();
   }, [onBatteryUpdate, onPortStatusUpdate]);
 
-  // ⛔ Render nothing — UI fully hidden
+  // ⛔ Component is invisible
   return null;
 }
