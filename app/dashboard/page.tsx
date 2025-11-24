@@ -1,26 +1,28 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useSearchParams, useRouter } from 'next/navigation'; // Added for URL params
 import BatteryGauge from "react-battery-gauge"; 
 import StationStatus from '../components/StationStatus';
 
-// The IP address of the ESP32 AP (Gateway)
-const ESP_GATEWAY_IP = "http://192.168.4.1";
-
 export default function Dashboard() {
-  const [wifiTime, setWifiTime] = useState(0); // Initialize at 0
-  const [isConnected, setIsConnected] = useState(false); // Track connection to ESP32
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  // --- Wi-Fi Timer State ---
+  const [wifiTime, setWifiTime] = useState(0);
+  const [isConnected, setIsConnected] = useState(false);
+
+  // --- Existing Dashboard State ---
   const [batteryPercentage, setBatteryPercentage] = useState(60);
   const [weather, setWeather] = useState<{ temp: number; desc: string; icon: string } | null>(null);
   const [loadingWeather, setLoadingWeather] = useState(true);
-  
-  // State for ports
   const [portStatus, setPortStatus] = useState({
     port1: 'inactive',
     port2: 'inactive',
-    port3: 'inactive',  
-    port4: 'inactive',  
-    outlet: 'inactive', 
+    port3: 'inactive',  // USB-C 1
+    port4: 'inactive',  // USB-C 2
+    outlet: 'inactive', // Outlet
   });
 
   const handleBatteryUpdate = (percent: number) => {
@@ -31,43 +33,56 @@ export default function Dashboard() {
     setPortStatus(ports);
   };
 
-  // --- NEW: Poll ESP32 for Real Wi-Fi Timer ---
+  // --- NEW: Handle URL Parameters & Timer Logic ---
   useEffect(() => {
-    const fetchTimer = async () => {
-      try {
-        // Fetch from the local ESP32 API we created in C
-        const res = await fetch(`${ESP_GATEWAY_IP}/api/status`);
-        const data = await res.json();
-        
-        // Update state based on C code response
-        // JSON structure: { "authenticated": true, "remaining_seconds": 120 }
-        setIsConnected(data.authenticated);
-        setWifiTime(data.remaining_seconds);
+    // 1. Check for ESP32 redirect params (run once on mount/param change)
+    const paramsSeconds = searchParams.get('seconds');
+    const paramsConnected = searchParams.get('connected');
 
-        if (!data.authenticated && data.remaining_seconds === 0) {
-            // Optional: You could redirect to login here if you wanted
-            // window.location.href = ESP_GATEWAY_IP;
+    if (paramsSeconds && paramsConnected === 'true') {
+      // Calculate absolute expiry time based on current time
+      const secondsToAdd = parseInt(paramsSeconds, 10);
+      const expiryTime = Date.now() + (secondsToAdd * 1000);
+      
+      // Save to Local Storage so it survives page refreshes
+      localStorage.setItem('wifi_expiry', expiryTime.toString());
+      localStorage.setItem('wifi_connected', 'true');
+
+      // Clean the URL so the user doesn't see the ugly parameters
+      router.replace('/dashboard');
+    }
+
+    // 2. Start the Countdown Loop
+    const interval = setInterval(() => {
+      const storedExpiry = localStorage.getItem('wifi_expiry');
+      const storedConnected = localStorage.getItem('wifi_connected');
+
+      if (storedConnected === 'true' && storedExpiry) {
+        const now = Date.now();
+        const timeLeftMs = parseInt(storedExpiry, 10) - now;
+        const timeLeftSec = Math.floor(timeLeftMs / 1000);
+
+        if (timeLeftSec > 0) {
+          setIsConnected(true);
+          setWifiTime(timeLeftSec);
+        } else {
+          // Time Expired
+          setIsConnected(false);
+          setWifiTime(0);
+          localStorage.removeItem('wifi_expiry');
+          localStorage.removeItem('wifi_connected');
         }
-
-      } catch (error) {
-        // If fetch fails, we aren't connected to the ESP32 network
-        console.error("Failed to connect to ESP32:", error);
+      } else {
+        // Not connected or no session found
         setIsConnected(false);
         setWifiTime(0);
       }
-    };
-
-    // Poll every 1 second to keep UI in sync with ESP32 internal timer
-    const interval = setInterval(fetchTimer, 1000);
-    
-    // Initial fetch
-    fetchTimer();
+    }, 1000);
 
     return () => clearInterval(interval);
-  }, []);
-  // ---------------------------------------------
+  }, [searchParams, router]);
 
-  // Fetch weather data (External API)
+  // --- Fetch Weather ---
   useEffect(() => {
     async function fetchWeather() {
       try {
@@ -105,7 +120,7 @@ export default function Dashboard() {
 
       {/* WIFI REMAINING TIME */}
       <div className="wifi-container">
-        {/* Update display based on connection status */}
+        {/* Color changes to Red if offline, Green if connected */}
         <div className="wifi-time" style={{ color: isConnected ? '#2E7D32' : '#d32f2f' }}>
             {isConnected ? formatTime(wifiTime) : "Offline"}
         </div>
@@ -114,7 +129,7 @@ export default function Dashboard() {
           <span className="wifi-bold">Wi-Fi Status</span>
           <br />
           <span className="wifi-subtext">
-            {isConnected ? "Remaining Time" : "Not connected to Station"}
+             {isConnected ? "Remaining Time" : "Connect to Station"}
           </span>
         </div>
       </div>
