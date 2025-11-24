@@ -4,18 +4,23 @@ import React, { useState, useEffect } from "react";
 import BatteryGauge from "react-battery-gauge"; 
 import StationStatus from '../components/StationStatus';
 
+// The IP address of the ESP32 AP (Gateway)
+const ESP_GATEWAY_IP = "http://192.168.4.1";
+
 export default function Dashboard() {
-  const [wifiTime, setWifiTime] = useState(59 * 60 + 45);
+  const [wifiTime, setWifiTime] = useState(0); // Initialize at 0
+  const [isConnected, setIsConnected] = useState(false); // Track connection to ESP32
   const [batteryPercentage, setBatteryPercentage] = useState(60);
-  const [isCharging, setIsCharging] = useState(true);
   const [weather, setWeather] = useState<{ temp: number; desc: string; icon: string } | null>(null);
   const [loadingWeather, setLoadingWeather] = useState(true);
+  
+  // State for ports
   const [portStatus, setPortStatus] = useState({
     port1: 'inactive',
     port2: 'inactive',
-    port3: 'inactive',  // USB-C 1
-    port4: 'inactive',  // USB-C 2
-    outlet: 'inactive', // Outlet
+    port3: 'inactive',  
+    port4: 'inactive',  
+    outlet: 'inactive', 
   });
 
   const handleBatteryUpdate = (percent: number) => {
@@ -23,17 +28,46 @@ export default function Dashboard() {
   };
 
   const handlePortStatusUpdate = (ports: { port1: string; port2: string; port3: string; port4: string; outlet: string }) => {
-  setPortStatus(ports);
+    setPortStatus(ports);
   };
 
-  // Wi-Fi countdown
+  // --- NEW: Poll ESP32 for Real Wi-Fi Timer ---
   useEffect(() => {
-    if (wifiTime <= 0) return;
-    const timer = setInterval(() => setWifiTime((prev) => prev - 1), 1000);
-    return () => clearInterval(timer);
-  }, [wifiTime]);
+    const fetchTimer = async () => {
+      try {
+        // Fetch from the local ESP32 API we created in C
+        const res = await fetch(`${ESP_GATEWAY_IP}/api/status`);
+        const data = await res.json();
+        
+        // Update state based on C code response
+        // JSON structure: { "authenticated": true, "remaining_seconds": 120 }
+        setIsConnected(data.authenticated);
+        setWifiTime(data.remaining_seconds);
 
-  // Fetch weather data
+        if (!data.authenticated && data.remaining_seconds === 0) {
+            // Optional: You could redirect to login here if you wanted
+            // window.location.href = ESP_GATEWAY_IP;
+        }
+
+      } catch (error) {
+        // If fetch fails, we aren't connected to the ESP32 network
+        console.error("Failed to connect to ESP32:", error);
+        setIsConnected(false);
+        setWifiTime(0);
+      }
+    };
+
+    // Poll every 1 second to keep UI in sync with ESP32 internal timer
+    const interval = setInterval(fetchTimer, 1000);
+    
+    // Initial fetch
+    fetchTimer();
+
+    return () => clearInterval(interval);
+  }, []);
+  // ---------------------------------------------
+
+  // Fetch weather data (External API)
   useEffect(() => {
     async function fetchWeather() {
       try {
@@ -55,6 +89,7 @@ export default function Dashboard() {
   }, []);
 
   const formatTime = (seconds: number) => {
+    if (!isConnected || seconds <= 0) return "--:--";
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
@@ -70,11 +105,17 @@ export default function Dashboard() {
 
       {/* WIFI REMAINING TIME */}
       <div className="wifi-container">
-        <div className="wifi-time">{formatTime(wifiTime)}</div>
+        {/* Update display based on connection status */}
+        <div className="wifi-time" style={{ color: isConnected ? '#2E7D32' : '#d32f2f' }}>
+            {isConnected ? formatTime(wifiTime) : "Offline"}
+        </div>
+        
         <div className="wifi-text">
-          <span className="wifi-bold">Wi-Fi</span>
+          <span className="wifi-bold">Wi-Fi Status</span>
           <br />
-          <span className="wifi-subtext">Remaining Time</span>
+          <span className="wifi-subtext">
+            {isConnected ? "Remaining Time" : "Not connected to Station"}
+          </span>
         </div>
       </div>
 
