@@ -1,15 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 // The IP Address of your ESP32 SoftAP Gateway
-// This must match the 'my_ap_ip' in your ESP32 code (usually 192.168.4.1)
 const ESP_GATEWAY_URL = "http://192.168.4.1/api/status";
 
-export default function Home() {
+// --- SUB-COMPONENT: HANDLES LOGIC & SEARCH PARAMS ---
+function StatusContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const searchParams = useSearchParams(); // This is safe now because it's inside Suspense
 
   // State
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
@@ -18,38 +18,31 @@ export default function Home() {
 
   // --- THE HEARTBEAT LOGIC ---
   useEffect(() => {
-    // 1. Immediate check on load
     checkStatus();
-
-    // 2. Poll every 1 second
     const interval = setInterval(checkStatus, 1000);
-
     return () => clearInterval(interval);
   }, []);
 
   const checkStatus = async () => {
     try {
-      // We use a short timeout (2s) so we detect "Offline" quickly
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 2000);
 
       const res = await fetch(ESP_GATEWAY_URL, { 
         signal: controller.signal,
-        mode: 'cors', // Your ESP32 C code allows CORS
+        mode: 'cors', 
       });
       
       clearTimeout(timeoutId);
 
       if (res.ok) {
         const data = await res.json();
-        // data.remaining_seconds comes from your ESP32 C code
         setTimeLeft(data.remaining_seconds);
         setIsConnected(true);
       } else {
         throw new Error("ESP32 API Error");
       }
     } catch (error) {
-      // If fetch fails (timeout or network error), user is NOT on ESP32 wifi
       setIsConnected(false);
       setTimeLeft(0);
     } finally {
@@ -61,8 +54,6 @@ export default function Home() {
     router.push("/dashboard"); 
   };
 
-  // --- RENDER HELPERS ---
-  
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
@@ -70,17 +61,7 @@ export default function Home() {
   };
 
   return (
-    <div className="page-container" style={{ textAlign: "center", padding: "2rem" }}>
-      
-      {/* HEADER SECTION */}
-      <h3 className="title-text" style={{ color: "#6F1D1B", fontSize: "1.5rem", fontWeight: "bold" }}>
-        Solar-Powered Charging Station
-      </h3>
-      
-      <p className="description-text" style={{ color: "#521B1B", margin: "1rem 0" }}>
-        The solar-powered charging station provides free device charging and Wi-Fi access.
-      </p>
-
+    <>
       {/* DYNAMIC STATUS CARD */}
       <div style={{ 
         backgroundColor: isConnected ? "#E6F4EA" : "#FCE8E6", 
@@ -129,6 +110,28 @@ export default function Home() {
       >
         Go to Dashboard
       </button>
+    </>
+  );
+}
+
+// --- MAIN PAGE COMPONENT ---
+export default function Home() {
+  return (
+    <div className="page-container" style={{ textAlign: "center", padding: "2rem" }}>
+      
+      {/* HEADER SECTION */}
+      <h3 className="title-text" style={{ color: "#6F1D1B", fontSize: "1.5rem", fontWeight: "bold" }}>
+        Solar-Powered Charging Station
+      </h3>
+      
+      <p className="description-text" style={{ color: "#521B1B", margin: "1rem 0" }}>
+        The solar-powered charging station provides free device charging and Wi-Fi access.
+      </p>
+
+      {/* WRAP DYNAMIC CONTENT IN SUSPENSE */}
+      <Suspense fallback={<p>Loading System...</p>}>
+        <StatusContent />
+      </Suspense>
 
       {/* FOOTER */}
       <div className="info-container" style={{ marginTop: "40px", fontSize: "0.8rem", color: "#666" }}>
