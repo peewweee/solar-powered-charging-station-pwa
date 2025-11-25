@@ -4,6 +4,9 @@ import React, { useState, useEffect } from "react";
 import BatteryGauge from "react-battery-gauge"; 
 import StationStatus from '../components/StationStatus';
 
+// Assuming the ESP32 AP gateway IP is the standard 192.168.4.1
+const ESP32_API_URL = "http://192.168.4.1/api/status";
+
 export default function Dashboard() {
   // --- Wi-Fi Timer State (Updated) ---
   const [wifiTime, setWifiTime] = useState(0);
@@ -30,8 +33,41 @@ export default function Dashboard() {
     setPortStatus(ports);
   };
 
-  // --- NEW: Timer Logic (Reads from LocalStorage) ---
+  // --- NEW: Timer Logic (Reads from LocalStorage with API Fallback) ---
   useEffect(() => {
+    
+    // Function to fetch status from ESP32 API as a fallback sync mechanism
+    const syncWithEsp32 = async () => {
+        // Only attempt API sync if we are locally marked as NOT connected
+        if (localStorage.getItem('wifi_connected') !== 'true') {
+            try {
+                // Fetch the current status and remaining seconds from the ESP32
+                const res = await fetch(ESP32_API_URL);
+                if (!res.ok) throw new Error("API status fetch failed");
+                
+                const data = await res.json();
+                const remaining = data.remaining_seconds;
+
+                if (data.authenticated && remaining > 0) {
+                    console.log(`[API Sync] ESP32 reports ${remaining}s remaining. Re-syncing LocalStorage.`);
+                    
+                    // Calculate the absolute expiry time from now
+                    const expiryTime = Date.now() + (remaining * 1000);
+                    localStorage.setItem('wifi_expiry', expiryTime.toString());
+                    localStorage.setItem('wifi_connected', 'true');
+                    // checkTimer will pick this up on its next run
+                } else {
+                    // If not authenticated or time is 0, ensure local storage is cleared
+                    localStorage.removeItem('wifi_expiry');
+                    localStorage.removeItem('wifi_connected');
+                }
+            } catch (error) {
+                // Expected if PWA is accessed while not connected to the ESP32 AP
+                console.warn("[API Sync] Could not reach ESP32 API:", error);
+            }
+        }
+    }
+
     const checkTimer = () => {
       const storedExpiry = localStorage.getItem('wifi_expiry');
       const storedConnected = localStorage.getItem('wifi_connected');
@@ -52,8 +88,10 @@ export default function Dashboard() {
           localStorage.removeItem('wifi_connected');
         }
       } else {
+        // LocalStorage is missing or already cleared. Try to sync.
         setIsConnected(false);
         setWifiTime(0);
+        syncWithEsp32(); // Attempt to sync if the timer is missing
       }
     };
 

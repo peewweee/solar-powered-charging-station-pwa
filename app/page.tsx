@@ -13,7 +13,9 @@ export default function Home() {
     if (paramsSeconds && paramsConnected === 'true') {
       const secondsToAdd = parseInt(paramsSeconds, 10);
       
-      // 2. Calculate when the session expires (Now + 60s)
+      // 2. Calculate when the session expires (Now + REMAINING seconds)
+      // This correctly calculates the absolute expiry time based on the time remaining
+      // sent by the ESP32, keeping the countdown in sync.
       const expiryTime = Date.now() + (secondsToAdd * 1000);
       
       // 3. Save to LocalStorage (The Dashboard page will read this)
