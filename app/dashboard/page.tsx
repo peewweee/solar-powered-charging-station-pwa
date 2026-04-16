@@ -2,19 +2,21 @@
 
 import React, { useState, useEffect } from "react";
 import BatteryGauge from "react-battery-gauge"; 
-import StationStatus from '../components/StationStatus';
-
-// Assuming the ESP32 AP gateway IP is the standard 192.168.4.1
-const ESP32_API_URL = "http://192.168.4.1/api/status";
+import { ensureInstallationId, readInstallationId } from "../lib/installation-id";
+import {
+  getSupabaseBrowserClient,
+  getSupabaseEnvErrorMessage,
+  hasSupabaseEnv,
+} from "../lib/supabase";
+import { extractSessionRecord, getResolvedSessionState } from "../lib/session";
 
 export default function Dashboard() {
-  // --- Wi-Fi Timer State (Updated) ---
   const [wifiTime, setWifiTime] = useState(0);
   const [isConnected, setIsConnected] = useState(false);
+  const [sessionMessage, setSessionMessage] = useState<string | null>(null);
+  const [sessionError, setSessionError] = useState<string | null>(null);
 
-  // --- Existing Dashboard State ---
   const [batteryPercentage, setBatteryPercentage] = useState(60);
-  const [isCharging, setIsCharging] = useState(true);
   const [weather, setWeather] = useState<{ temp: number; desc: string; icon: string } | null>(null);
   const [loadingWeather, setLoadingWeather] = useState(true);
   const [portStatus, setPortStatus] = useState({
@@ -25,86 +27,80 @@ export default function Dashboard() {
     outlet: 'inactive', // Outlet
   });
 
-  const handleBatteryUpdate = (percent: number) => {
-    setBatteryPercentage(percent);
-  };
-
-  const handlePortStatusUpdate = (ports: { port1: string; port2: string; port3: string; port4: string; outlet: string }) => {
-    setPortStatus(ports);
-  };
-
-  // --- NEW: Timer Logic (Reads from LocalStorage with API Fallback) ---
   useEffect(() => {
-    
-    // Function to fetch status from ESP32 API as a fallback sync mechanism
-    const syncWithEsp32 = async () => {
-        // Only attempt API sync if we are locally marked as NOT connected
-        if (localStorage.getItem('wifi_connected') !== 'true') {
-            try {
-                // Fetch the current status and remaining seconds from the ESP32
-                const res = await fetch(ESP32_API_URL);
-                if (!res.ok) throw new Error("API status fetch failed");
-                
-                const data = await res.json();
-                const remaining = data.remaining_seconds;
+    let interval: number | null = null;
+    let cancelled = false;
 
-                if (data.authenticated && remaining > 0) {
-                    console.log(`[API Sync] ESP32 reports ${remaining}s remaining. Re-syncing LocalStorage.`);
-                    
-                    // Calculate the absolute expiry time from now
-                    const expiryTime = Date.now() + (remaining * 1000);
-                    localStorage.setItem('wifi_expiry', expiryTime.toString());
-                    localStorage.setItem('wifi_connected', 'true');
-                    // checkTimer will pick this up on its next run
-                } else {
-                    // If not authenticated or time is 0, ensure local storage is cleared
-                    localStorage.removeItem('wifi_expiry');
-                    localStorage.removeItem('wifi_connected');
-                }
-            } catch (error) {
-                // Expected if PWA is accessed while not connected to the ESP32 AP
-                console.warn("[API Sync] Could not reach ESP32 API:", error);
-            }
+    const resolveSession = async () => {
+      try {
+        const installationId = ensureInstallationId() ?? readInstallationId();
+        if (!installationId) {
+          throw new Error("Unable to access this browser installation identity.");
         }
-    }
 
-    const checkTimer = () => {
-      const storedExpiry = localStorage.getItem('wifi_expiry');
-      const storedConnected = localStorage.getItem('wifi_connected');
+        const supabase = getSupabaseBrowserClient();
+        if (!supabase) {
+          throw new Error(getSupabaseEnvErrorMessage());
+        }
 
-      if (storedConnected === 'true' && storedExpiry) {
-        const now = Date.now();
-        const timeLeftMs = parseInt(storedExpiry, 10) - now;
-        const timeLeftSec = Math.floor(timeLeftMs / 1000);
+        const { data, error } = await supabase.rpc("resolve_installation_session", {
+          installation_id: installationId,
+        });
 
-        if (timeLeftSec > 0) {
-          setIsConnected(true);
-          setWifiTime(timeLeftSec);
-        } else {
-          // Time Expired
+        if (error) {
+          throw error;
+        }
+
+        const session = extractSessionRecord(data);
+        const resolvedState = getResolvedSessionState(session);
+
+        if (cancelled) {
+          return;
+        }
+
+        setIsConnected(resolvedState.isConnected);
+        setWifiTime(resolvedState.remainingSeconds);
+        setSessionMessage(resolvedState.label);
+        setSessionError(null);
+      } catch (error) {
+        console.error("Failed to resolve installation session", error);
+
+        if (!cancelled) {
           setIsConnected(false);
           setWifiTime(0);
-          localStorage.removeItem('wifi_expiry');
-          localStorage.removeItem('wifi_connected');
+          setSessionMessage("Connect to Station");
+          setSessionError(error instanceof Error ? error.message : "Unable to load session.");
         }
-      } else {
-        // LocalStorage is missing or already cleared. Try to sync.
-        setIsConnected(false);
-        setWifiTime(0);
-        syncWithEsp32(); // Attempt to sync if the timer is missing
       }
     };
 
-    // Run immediately on mount
-    checkTimer();
+    void resolveSession();
+    interval = window.setInterval(() => {
+      setWifiTime((current) => Math.max(0, current - 1));
+    }, 1000);
 
-    // Start interval loop
-    const interval = setInterval(checkTimer, 1000);
+    const refreshInterval = window.setInterval(() => {
+      void resolveSession();
+    }, 30000);
 
-    return () => clearInterval(interval);
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void resolveSession();
+      }
+    };
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      cancelled = true;
+      if (interval !== null) {
+        window.clearInterval(interval);
+      }
+      window.clearInterval(refreshInterval);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
   }, []);
 
-  // Fetch weather data
   useEffect(() => {
     async function fetchWeather() {
       try {
@@ -135,12 +131,7 @@ export default function Dashboard() {
   return (
     <div className="dashboard-container">
       <h2 className="dashboard-title">Dashboard</h2>
-        <StationStatus
-        onBatteryUpdate={handleBatteryUpdate}
-        onPortStatusUpdate={handlePortStatusUpdate}
-        />
 
-      {/* WIFI REMAINING TIME (Updated) */}
       <div className="wifi-container">
         <div className="wifi-time" style={{ color: isConnected ? '#998A64' : '#6F1D1B' }}>
             {isConnected ? formatTime(wifiTime) : "Offline"}
@@ -149,10 +140,20 @@ export default function Dashboard() {
           <span className="wifi-bold">Wi-Fi Status</span>
           <br />
           <span className="wifi-subtext">
-             {isConnected ? "Remaining Time" : "Connect to Station"}
+             {isConnected ? "Remaining Time" : (sessionMessage ?? "Connect to Station")}
           </span>
         </div>
       </div>
+
+      {sessionError ? (
+        <div style={{ marginTop: "10px", color: "#F1E8E8", fontSize: "12px" }}>{sessionError}</div>
+      ) : null}
+
+      {!hasSupabaseEnv() ? (
+        <div style={{ marginTop: "10px", color: "#F1E8E8", fontSize: "12px" }}>
+          {getSupabaseEnvErrorMessage()}
+        </div>
+      ) : null}
 
       <div className="line-separator"></div>
 

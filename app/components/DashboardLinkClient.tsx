@@ -1,0 +1,107 @@
+"use client";
+
+import React, { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { ensureInstallationId, readInstallationId } from "../lib/installation-id";
+import {
+  getSupabaseBrowserClient,
+  getSupabaseEnvErrorMessage,
+  hasSupabaseEnv,
+} from "../lib/supabase";
+import { extractSessionRecord, getResolvedSessionState } from "../lib/session";
+
+export default function DashboardLinkClient() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [message, setMessage] = useState("Linking your browser to the current session...");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const sessionToken = useMemo(() => searchParams.get("session_token"), [searchParams]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const linkSession = async () => {
+      if (!sessionToken) {
+        setMessage("This link is missing a session token.");
+        return;
+      }
+
+      try {
+        const installationId = ensureInstallationId() ?? readInstallationId();
+        if (!installationId) {
+          throw new Error("Unable to access this browser installation identity.");
+        }
+
+        const supabase = getSupabaseBrowserClient();
+        if (!supabase) {
+          throw new Error(getSupabaseEnvErrorMessage());
+        }
+
+        const { data, error } = await supabase.rpc("claim_session_link", {
+          session_token: sessionToken,
+          installation_id: installationId,
+        });
+
+        if (error) {
+          throw error;
+        }
+
+        const session = extractSessionRecord(data);
+        const resolvedState = getResolvedSessionState(session);
+
+        if (cancelled) {
+          return;
+        }
+
+        setMessage(
+          resolvedState.isConnected
+            ? "Link complete. Redirecting to your dashboard..."
+            : "Link complete. Redirecting to dashboard...",
+        );
+
+        window.setTimeout(() => {
+          router.replace("/dashboard");
+        }, 1200);
+      } catch (error) {
+        console.error("Failed to link session", error);
+
+        if (!cancelled) {
+          setMessage("Unable to link this browser right now.");
+          setErrorMessage(error instanceof Error ? error.message : "Unexpected link failure.");
+        }
+      }
+    };
+
+    void linkSession();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [router, sessionToken]);
+
+  return (
+    <div className="page-container">
+      <h3 className="title-text">Solar-Powered Charging Station</h3>
+      <p className="description-text">{message}</p>
+
+      <div className="info-container">
+        <p className="info-text">
+          If the redirect does not continue automatically, open the dashboard again after linking.
+        </p>
+      </div>
+
+      {errorMessage ? (
+        <div className="info-container">
+          <p className="info-text">{errorMessage}</p>
+        </div>
+      ) : null}
+
+      {!hasSupabaseEnv() ? (
+        <div className="info-container">
+          <p className="info-text">{getSupabaseEnvErrorMessage()}</p>
+        </div>
+      ) : null}
+    </div>
+  );
+}

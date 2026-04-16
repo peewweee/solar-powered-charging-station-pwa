@@ -3,27 +3,13 @@
 import React, { useEffect } from "react";
 
 export default function Home() {
-  // --- LOGIC: Capture Timer Data from ESP32 URL ---
   useEffect(() => {
-    // 1. Check if ESP32 sent us timer parameters
-    const params = new URLSearchParams(window.location.search);
-    const paramsSeconds = params.get('seconds');
-    const paramsConnected = params.get('connected');
+    if (window.location.pathname === "/dashboard/link") {
+      return;
+    }
 
-    if (paramsSeconds && paramsConnected === 'true') {
-      const secondsToAdd = parseInt(paramsSeconds, 10);
-      
-      // 2. Calculate when the session expires (Now + REMAINING seconds)
-      // This correctly calculates the absolute expiry time based on the time remaining
-      // sent by the ESP32, keeping the countdown in sync.
-      const expiryTime = Date.now() + (secondsToAdd * 1000);
-      
-      // 3. Save to LocalStorage (The Dashboard page will read this)
-      localStorage.setItem('wifi_expiry', expiryTime.toString());
-      localStorage.setItem('wifi_connected', 'true');
-
-      // 4. Clean the URL so the user doesn't see the ugly parameters
-      window.history.replaceState({}, '', '/');
+    if (window.location.search.includes("session_token=")) {
+      window.location.replace(`/dashboard/link${window.location.search}`);
     }
   }, []);
 
