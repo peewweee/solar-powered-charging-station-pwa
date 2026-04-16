@@ -3,12 +3,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ensureInstallationId, readInstallationId } from "../lib/installation-id";
-import {
-  getSupabaseBrowserClient,
-  getSupabaseEnvErrorMessage,
-  hasSupabaseEnv,
-} from "../lib/supabase";
-import { extractSessionRecord, getResolvedSessionState } from "../lib/session";
+import { getSupabaseEnvErrorMessage, hasSupabaseEnv } from "../lib/supabase";
+import { getResolvedSessionState } from "../lib/session";
+import { claimSessionLink } from "../lib/session-backend";
 
 export default function DashboardLinkClient() {
   const router = useRouter();
@@ -33,21 +30,7 @@ export default function DashboardLinkClient() {
           throw new Error("Unable to access this browser installation identity.");
         }
 
-        const supabase = getSupabaseBrowserClient();
-        if (!supabase) {
-          throw new Error(getSupabaseEnvErrorMessage());
-        }
-
-        const { data, error } = await supabase.rpc("claim_session_link", {
-          session_token: sessionToken,
-          installation_id: installationId,
-        });
-
-        if (error) {
-          throw error;
-        }
-
-        const session = extractSessionRecord(data);
+        const session = await claimSessionLink(sessionToken, installationId);
         const resolvedState = getResolvedSessionState(session);
 
         if (cancelled) {

@@ -3,17 +3,17 @@
 import React, { useState, useEffect } from "react";
 import BatteryGauge from "react-battery-gauge"; 
 import { ensureInstallationId, readInstallationId } from "../lib/installation-id";
-import {
-  getSupabaseBrowserClient,
-  getSupabaseEnvErrorMessage,
-  hasSupabaseEnv,
-} from "../lib/supabase";
-import { extractSessionRecord, getResolvedSessionState } from "../lib/session";
+import { getSupabaseEnvErrorMessage, hasSupabaseEnv } from "../lib/supabase";
+import { getResolvedSessionState } from "../lib/session";
+import { resolveInstallationSession } from "../lib/session-backend";
 
 export default function Dashboard() {
+  const recoveryUrl = "http://192.168.4.1/";
   const [wifiTime, setWifiTime] = useState(0);
   const [isConnected, setIsConnected] = useState(false);
   const [sessionMessage, setSessionMessage] = useState<string | null>(null);
+  const [sessionHelperText, setSessionHelperText] = useState<string | null>(null);
+  const [showRecoveryLink, setShowRecoveryLink] = useState(false);
   const [sessionError, setSessionError] = useState<string | null>(null);
 
   const [batteryPercentage, setBatteryPercentage] = useState(60);
@@ -38,20 +38,7 @@ export default function Dashboard() {
           throw new Error("Unable to access this browser installation identity.");
         }
 
-        const supabase = getSupabaseBrowserClient();
-        if (!supabase) {
-          throw new Error(getSupabaseEnvErrorMessage());
-        }
-
-        const { data, error } = await supabase.rpc("resolve_installation_session", {
-          installation_id: installationId,
-        });
-
-        if (error) {
-          throw error;
-        }
-
-        const session = extractSessionRecord(data);
+        const session = await resolveInstallationSession(installationId);
         const resolvedState = getResolvedSessionState(session);
 
         if (cancelled) {
@@ -61,6 +48,8 @@ export default function Dashboard() {
         setIsConnected(resolvedState.isConnected);
         setWifiTime(resolvedState.remainingSeconds);
         setSessionMessage(resolvedState.label);
+        setSessionHelperText(resolvedState.helperText);
+        setShowRecoveryLink(resolvedState.needsRecoveryLink);
         setSessionError(null);
       } catch (error) {
         console.error("Failed to resolve installation session", error);
@@ -69,6 +58,10 @@ export default function Dashboard() {
           setIsConnected(false);
           setWifiTime(0);
           setSessionMessage("Connect to Station");
+          setSessionHelperText(
+            "We could not load your linked session right now. If you are connected to SOLAR CONNECT, open 192.168.4.1 to recover.",
+          );
+          setShowRecoveryLink(true);
           setSessionError(error instanceof Error ? error.message : "Unable to load session.");
         }
       }
@@ -147,6 +140,20 @@ export default function Dashboard() {
 
       {sessionError ? (
         <div style={{ marginTop: "10px", color: "#F1E8E8", fontSize: "12px" }}>{sessionError}</div>
+      ) : null}
+
+      {!isConnected && sessionHelperText ? (
+        <div style={{ marginTop: "10px", color: "#F1E8E8", fontSize: "12px" }}>
+          <span>{sessionHelperText} </span>
+          {showRecoveryLink ? (
+            <a
+              href={recoveryUrl}
+              style={{ color: "#F1E8E8", textDecoration: "underline" }}
+            >
+              Open local recovery
+            </a>
+          ) : null}
+        </div>
       ) : null}
 
       {!hasSupabaseEnv() ? (
