@@ -72,8 +72,7 @@ export function getResolvedSessionState(session: SessionRecord | null, now = Dat
       isConnected: false,
       remainingSeconds: 0,
       label: "Connect to Station",
-      helperText:
-        "No linked session was found for this browser. If you just connected to SOLAR CONNECT, open 192.168.4.1 to continue.",
+      helperText: "You are disconnected. If you just connected to 'SOLAR CONNECT', open the portal.",
       needsRecoveryLink: true,
       shouldTick: false,
     };
@@ -165,8 +164,7 @@ export function getResolvedSessionState(session: SessionRecord | null, now = Dat
     isConnected: false,
     remainingSeconds: 0,
     label: "Connect to Station",
-    helperText:
-      "No active session is available right now. Connect to SOLAR CONNECT, or open 192.168.4.1 if you need the local recovery page.",
+    helperText: "You are disconnected. If you just connected to 'SOLAR CONNECT', open the portal.",
     needsRecoveryLink: true,
     shouldTick: false,
   };

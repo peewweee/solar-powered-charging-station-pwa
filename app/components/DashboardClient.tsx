@@ -10,7 +10,6 @@ import { resolveInstallationSession } from "../lib/session-backend";
 export default function DashboardClient() {
   const ACTIVE_REFRESH_INTERVAL_MS = 3000;
   const RECOVERY_REFRESH_INTERVAL_MS = 2000;
-  const recoveryUrl = "http://192.168.4.1/";
   const [wifiTime, setWifiTime] = useState(0);
   const [sessionPhase, setSessionPhase] = useState<ResolvedSessionState["phase"]>("not_linked");
   const [sessionMessage, setSessionMessage] = useState<string | null>(null);
@@ -188,6 +187,7 @@ export default function DashboardClient() {
     return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
   };
 
+  const recoveryUrl = sessionPhase === "not_linked" ? "/portal" : "http://192.168.4.1/";
   const isActive = sessionPhase === "active";
   const showCountdown = sessionPhase === "active" || sessionPhase === "disconnected" || sessionPhase === "expired";
   const wifiDisplay = showCountdown ? formatTime(wifiTime) : "Offline";
@@ -216,7 +216,7 @@ export default function DashboardClient() {
           <span>{sessionHelperText} </span>
           {showRecoveryLink ? (
             <a href={recoveryUrl} style={{ color: "#F1E8E8", textDecoration: "underline" }}>
-              Open local recovery
+              open the portal
             </a>
           ) : null}
         </div>
