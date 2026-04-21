@@ -4,16 +4,17 @@ import React, { useState, useEffect } from "react";
 import BatteryGauge from "react-battery-gauge"; 
 import { ensureInstallationId, readInstallationId } from "../lib/installation-id";
 import { getSupabaseEnvErrorMessage, hasSupabaseEnv } from "../lib/supabase";
-import { getResolvedSessionState } from "../lib/session";
+import { getResolvedSessionState, type ResolvedSessionState } from "../lib/session";
 import { resolveInstallationSession } from "../lib/session-backend";
 
 export default function Dashboard() {
   const recoveryUrl = "http://192.168.4.1/";
   const [wifiTime, setWifiTime] = useState(0);
-  const [isConnected, setIsConnected] = useState(false);
+  const [sessionPhase, setSessionPhase] = useState<ResolvedSessionState["phase"]>("not_linked");
   const [sessionMessage, setSessionMessage] = useState<string | null>(null);
   const [sessionHelperText, setSessionHelperText] = useState<string | null>(null);
   const [showRecoveryLink, setShowRecoveryLink] = useState(false);
+  const [shouldTick, setShouldTick] = useState(false);
   const [sessionError, setSessionError] = useState<string | null>(null);
 
   const [batteryPercentage, setBatteryPercentage] = useState(60);
@@ -45,23 +46,25 @@ export default function Dashboard() {
           return;
         }
 
-        setIsConnected(resolvedState.isConnected);
+        setSessionPhase(resolvedState.phase);
         setWifiTime(resolvedState.remainingSeconds);
         setSessionMessage(resolvedState.label);
         setSessionHelperText(resolvedState.helperText);
         setShowRecoveryLink(resolvedState.needsRecoveryLink);
+        setShouldTick(resolvedState.shouldTick);
         setSessionError(null);
       } catch (error) {
         console.error("Failed to resolve installation session", error);
 
         if (!cancelled) {
-          setIsConnected(false);
+          setSessionPhase("not_linked");
           setWifiTime(0);
           setSessionMessage("Connect to Station");
           setSessionHelperText(
             "We could not load your linked session right now. If you are connected to SOLAR CONNECT, open 192.168.4.1 to recover.",
           );
           setShowRecoveryLink(true);
+          setShouldTick(false);
           setSessionError(error instanceof Error ? error.message : "Unable to load session.");
         }
       }
@@ -69,7 +72,25 @@ export default function Dashboard() {
 
     void resolveSession();
     interval = window.setInterval(() => {
-      setWifiTime((current) => Math.max(0, current - 1));
+      if (!shouldTick) {
+        return;
+      }
+
+      setWifiTime((current) => {
+        const nextValue = Math.max(0, current - 1);
+
+        if (nextValue === 0) {
+          setSessionPhase("expired");
+          setSessionMessage("Expired");
+          setSessionHelperText(
+            "Your last session has ended. Reconnect to SOLAR CONNECT, or open 192.168.4.1 if the portal does not appear.",
+          );
+          setShowRecoveryLink(true);
+          setShouldTick(false);
+        }
+
+        return nextValue;
+      });
     }, 1000);
 
     const refreshInterval = window.setInterval(() => {
@@ -92,7 +113,7 @@ export default function Dashboard() {
       window.clearInterval(refreshInterval);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, []);
+  }, [shouldTick]);
 
   useEffect(() => {
     async function fetchWeather() {
@@ -115,25 +136,28 @@ export default function Dashboard() {
   }, []);
 
   const formatTime = (seconds: number) => {
-    if (!isConnected || seconds <= 0) return "--:--";
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
   };
+
+  const isActive = sessionPhase === "active";
+  const showCountdown = sessionPhase === "active" || sessionPhase === "disconnected" || sessionPhase === "expired";
+  const wifiDisplay = showCountdown ? formatTime(wifiTime) : "Offline";
 
   return (
     <div className="dashboard-container">
       <h2 className="dashboard-title">Dashboard</h2>
 
       <div className="wifi-container">
-        <div className="wifi-time" style={{ color: isConnected ? '#998A64' : '#6F1D1B' }}>
-            {isConnected ? formatTime(wifiTime) : "Offline"}
+        <div className="wifi-time" style={{ color: isActive ? '#998A64' : '#6F1D1B' }}>
+            {wifiDisplay}
         </div>
         <div className="wifi-text">
           <span className="wifi-bold">Wi-Fi Status</span>
           <br />
           <span className="wifi-subtext">
-             {isConnected ? "Remaining Time" : (sessionMessage ?? "Connect to Station")}
+             {sessionMessage ?? "Connect to Station"}
           </span>
         </div>
       </div>
@@ -142,7 +166,7 @@ export default function Dashboard() {
         <div style={{ marginTop: "10px", color: "#F1E8E8", fontSize: "12px" }}>{sessionError}</div>
       ) : null}
 
-      {!isConnected && sessionHelperText ? (
+      {!isActive && sessionHelperText ? (
         <div style={{ marginTop: "10px", color: "#F1E8E8", fontSize: "12px" }}>
           <span>{sessionHelperText} </span>
           {showRecoveryLink ? (

@@ -48,48 +48,23 @@ function getTimestamp(value: string | null) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-function getSessionPriority(session: SessionRecord | null, now: number) {
-  if (!session) {
-    return Number.NEGATIVE_INFINITY;
-  }
+function getRowRecency(row: LegacySessionRow) {
+  const id = typeof row.id === "number" ? row.id : 0;
+  const heartbeatAt = getTimestamp(typeof row.last_heartbeat === "string" ? row.last_heartbeat : null) ?? 0;
+  const sessionEndAt = getTimestamp(typeof row.session_end === "string" ? row.session_end : null) ?? 0;
+  const sessionStartAt = getTimestamp(typeof row.session_start === "string" ? row.session_start : null) ?? 0;
+  const latestAt = Math.max(heartbeatAt, sessionStartAt, sessionEndAt);
 
-  const remainingSeconds = Math.max(0, session.remaining_seconds);
-  const sessionEndAt = getTimestamp(session.session_end);
-  const heartbeatAt = getTimestamp(session.last_heartbeat);
-  const status = session.status?.toLowerCase() ?? "";
-  const hasFutureEnd = sessionEndAt !== null && sessionEndAt > now;
-  const heartbeatFresh = heartbeatAt !== null && now - heartbeatAt <= 120_000;
-  const looksActive =
-    remainingSeconds > 0 &&
-    status === "active" &&
-    session.ap_connected !== false &&
-    (hasFutureEnd || heartbeatFresh);
-
-  if (looksActive) {
-    return 100;
-  }
-
-  if (remainingSeconds > 0 && hasFutureEnd) {
-    return 75;
-  }
-
-  if (status === "active") {
-    return 50;
-  }
-
-  if (sessionEndAt !== null) {
-    return sessionEndAt / 1_000;
-  }
-
-  if (heartbeatAt !== null) {
-    return heartbeatAt / 1_000;
-  }
-
-  return remainingSeconds;
+  return {
+    id,
+    heartbeatAt,
+    sessionEndAt,
+    sessionStartAt,
+    latestAt,
+  };
 }
 
 function pickBestSession(rows: LegacySessionRow[]) {
-  const now = Date.now();
   const normalizedRows = rows
     .map((row) => ({
       session: normalizeCompatibilityRow(row),
@@ -101,7 +76,19 @@ function pickBestSession(rows: LegacySessionRow[]) {
     return null;
   }
 
-  normalizedRows.sort((left, right) => getSessionPriority(right.session, now) - getSessionPriority(left.session, now));
+  normalizedRows.sort((left, right) => {
+    const rightRecency = getRowRecency(right.row);
+    const leftRecency = getRowRecency(left.row);
+
+    return (
+      rightRecency.latestAt - leftRecency.latestAt ||
+      rightRecency.heartbeatAt - leftRecency.heartbeatAt ||
+      rightRecency.sessionStartAt - leftRecency.sessionStartAt ||
+      rightRecency.sessionEndAt - leftRecency.sessionEndAt ||
+      rightRecency.id - leftRecency.id
+    );
+  });
+
   return normalizedRows[0]?.session ?? null;
 }
 
@@ -126,20 +113,41 @@ async function claimSessionLinkFallback(supabase: SupabaseLikeClient, sessionTok
 }
 
 async function resolveInstallationSessionFallback(supabase: SupabaseLikeClient, installationId: string) {
-  const { data, error } = await supabase
+  const { data: linkedRows, error: linkedError } = await supabase
     .from("sessions")
     .select("*")
     .eq("installation_id", installationId)
     .order("last_heartbeat", { ascending: false, nullsFirst: false })
+    .order("session_start", { ascending: false, nullsFirst: false })
     .order("session_end", { ascending: false, nullsFirst: false })
     .order("id", { ascending: false })
     .limit(10);
 
-  if (error) {
-    throw error;
+  if (linkedError) {
+    throw linkedError;
   }
 
-  return pickBestSession(((data ?? []) as LegacySessionRow[]).filter(Boolean));
+  const linkedDeviceSession = pickBestSession(((linkedRows ?? []) as LegacySessionRow[]).filter(Boolean));
+
+  if (!linkedDeviceSession?.device_hash) {
+    return linkedDeviceSession;
+  }
+
+  const { data: deviceRows, error: deviceError } = await supabase
+    .from("sessions")
+    .select("*")
+    .or(`device_hash.eq.${linkedDeviceSession.device_hash},mac_hash.eq.${linkedDeviceSession.device_hash}`)
+    .order("last_heartbeat", { ascending: false, nullsFirst: false })
+    .order("session_start", { ascending: false, nullsFirst: false })
+    .order("session_end", { ascending: false, nullsFirst: false })
+    .order("id", { ascending: false })
+    .limit(20);
+
+  if (deviceError) {
+    throw deviceError;
+  }
+
+  return pickBestSession(((deviceRows ?? []) as LegacySessionRow[]).filter(Boolean));
 }
 
 export async function claimSessionLink(sessionToken: string, installationId: string) {

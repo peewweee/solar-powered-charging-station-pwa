@@ -9,11 +9,13 @@ export type SessionRecord = {
 };
 
 export type ResolvedSessionState = {
+  phase: "active" | "disconnected" | "expired" | "not_linked";
   isConnected: boolean;
   remainingSeconds: number;
   label: string;
   helperText: string | null;
   needsRecoveryLink: boolean;
+  shouldTick: boolean;
 };
 
 function coerceString(value: unknown) {
@@ -66,12 +68,14 @@ function getTimestamp(value: string | null) {
 export function getResolvedSessionState(session: SessionRecord | null, now = Date.now()): ResolvedSessionState {
   if (!session) {
     return {
+      phase: "not_linked",
       isConnected: false,
       remainingSeconds: 0,
       label: "Connect to Station",
       helperText:
         "No linked session was found for this browser. If you just connected to SOLAR CONNECT, open 192.168.4.1 to continue.",
       needsRecoveryLink: true,
+      shouldTick: false,
     };
   }
 
@@ -84,69 +88,84 @@ export function getResolvedSessionState(session: SessionRecord | null, now = Dat
   const remainingSeconds =
     remainingFromEnd === null ? rawRemainingSeconds : Math.max(0, Math.min(rawRemainingSeconds, remainingFromEnd));
   const hasFreshHeartbeat = heartbeatAt !== null && now - heartbeatAt <= 120_000;
-  const isExpired = remainingFromEnd !== null && remainingFromEnd <= 0;
-  const isStaleActive =
-    normalizedStatus === "active" &&
-    rawRemainingSeconds > 0 &&
-    session.ap_connected !== false &&
-    heartbeatAt !== null &&
-    !hasFreshHeartbeat;
+  const isExpired =
+    normalizedStatus === "expired" ||
+    rawRemainingSeconds <= 0 ||
+    (remainingFromEnd !== null && remainingFromEnd <= 0);
+  const isDisconnected =
+    !isExpired &&
+    (normalizedStatus === "disconnected" ||
+      session.ap_connected === false ||
+      (normalizedStatus === "active" &&
+        rawRemainingSeconds > 0 &&
+        heartbeatAt !== null &&
+        !hasFreshHeartbeat));
   const isActive =
     !isExpired &&
-    !isStaleActive &&
+    !isDisconnected &&
     remainingSeconds > 0 &&
     normalizedStatus === "active" &&
     session.ap_connected !== false;
 
   if (isActive) {
     return {
+      phase: "active",
       isConnected: true,
       remainingSeconds,
       label: "Remaining Time",
       helperText: null,
       needsRecoveryLink: false,
+      shouldTick: true,
     };
   }
 
   if (isExpired) {
     return {
+      phase: "expired",
       isConnected: false,
       remainingSeconds: 0,
-      label: "Connect to Station",
+      label: "Expired",
       helperText:
         "Your last session has ended. Reconnect to SOLAR CONNECT, or open 192.168.4.1 if the portal does not appear.",
       needsRecoveryLink: true,
+      shouldTick: false,
     };
   }
 
-  if (isStaleActive) {
+  if (isDisconnected) {
     return {
+      phase: "disconnected",
       isConnected: false,
       remainingSeconds,
-      label: "Connect to Station",
+      label: "Disconnected",
       helperText:
-        "The last linked session looks stale or disconnected. Reconnect to SOLAR CONNECT, or open 192.168.4.1 to recover.",
+        "Your linked session is currently disconnected or paused. Reconnect to SOLAR CONNECT, or open 192.168.4.1 to recover.",
       needsRecoveryLink: true,
+      shouldTick: false,
     };
   }
 
   if (remainingSeconds > 0) {
     return {
+      phase: "disconnected",
       isConnected: false,
       remainingSeconds,
-      label: "Connect to Station",
+      label: "Disconnected",
       helperText:
         "A linked session exists but is not currently active on this device. Reconnect to SOLAR CONNECT, or open 192.168.4.1 to recover.",
       needsRecoveryLink: true,
+      shouldTick: false,
     };
   }
 
   return {
+    phase: "not_linked",
     isConnected: false,
     remainingSeconds: 0,
     label: "Connect to Station",
     helperText:
       "No active session is available right now. Connect to SOLAR CONNECT, or open 192.168.4.1 if you need the local recovery page.",
     needsRecoveryLink: true,
+    shouldTick: false,
   };
 }
