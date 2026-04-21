@@ -85,8 +85,6 @@ export function getResolvedSessionState(session: SessionRecord | null, now = Dat
   const heartbeatAt = getTimestamp(session.last_heartbeat);
   const remainingFromEnd =
     sessionEndAt === null ? null : Math.max(0, Math.ceil((sessionEndAt - now) / 1000));
-  const remainingSeconds =
-    remainingFromEnd === null ? rawRemainingSeconds : Math.max(0, Math.min(rawRemainingSeconds, remainingFromEnd));
   const hasFreshHeartbeat = heartbeatAt !== null && now - heartbeatAt <= 120_000;
   const isExpired =
     normalizedStatus === "expired" ||
@@ -100,6 +98,10 @@ export function getResolvedSessionState(session: SessionRecord | null, now = Dat
         rawRemainingSeconds > 0 &&
         heartbeatAt !== null &&
         !hasFreshHeartbeat));
+  const remainingSeconds =
+    isDisconnected || remainingFromEnd === null
+      ? rawRemainingSeconds
+      : Math.max(0, Math.min(rawRemainingSeconds, remainingFromEnd));
   const isActive =
     !isExpired &&
     !isDisconnected &&
