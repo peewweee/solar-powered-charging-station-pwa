@@ -72,7 +72,7 @@ export function getResolvedSessionState(session: SessionRecord | null, now = Dat
       isConnected: false,
       remainingSeconds: 0,
       label: "Connect to Station",
-      helperText: "You are disconnected. If you just connected to 'SOLAR CONNECT', open the portal.",
+      helperText: "You are disconnected. If you just connected to 'SOLAR CONNECT', ",
       needsRecoveryLink: true,
       shouldTick: false,
     };
@@ -164,7 +164,7 @@ export function getResolvedSessionState(session: SessionRecord | null, now = Dat
     isConnected: false,
     remainingSeconds: 0,
     label: "Connect to Station",
-    helperText: "You are disconnected. If you just connected to 'SOLAR CONNECT', open the portal.",
+    helperText: "You are disconnected. If you just connected to 'SOLAR CONNECT', ",
     needsRecoveryLink: true,
     shouldTick: false,
   };

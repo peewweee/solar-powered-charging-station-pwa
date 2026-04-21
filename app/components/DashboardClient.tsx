@@ -216,7 +216,7 @@ export default function DashboardClient() {
           <span>{sessionHelperText} </span>
           {showRecoveryLink ? (
             <a href={recoveryUrl} style={{ color: "#F1E8E8", textDecoration: "underline" }}>
-              open the portal
+              open the portal.
             </a>
           ) : null}
         </div>
