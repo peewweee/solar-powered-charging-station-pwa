@@ -1,8 +1,10 @@
 "use client";
 
-import React, { Suspense } from "react";
-import { useSearchParams } from "next/navigation";
-import DashboardLinkClient from "./components/DashboardLinkClient";
+import React, { useEffect, useState } from "react";
+import { ensureInstallationId, readInstallationId } from "./lib/installation-id";
+import { getSupabaseEnvErrorMessage, hasSupabaseEnv } from "./lib/supabase";
+import { getResolvedSessionState } from "./lib/session";
+import { claimSessionLink } from "./lib/session-backend";
 
 function LandingPage() {
   const goToDashboard = () => {
@@ -33,21 +35,92 @@ function LandingPage() {
   );
 }
 
-function RootRouteContent() {
-  const searchParams = useSearchParams();
-  const sessionToken = searchParams.get("session_token");
+export default function Home() {
+  const [hasSessionToken, setHasSessionToken] = useState(false);
+  const [message, setMessage] = useState("Linking your browser to the current session...");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  if (sessionToken) {
-    return <DashboardLinkClient />;
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const sessionToken = params.get("session_token");
+
+    setHasSessionToken(Boolean(sessionToken));
+
+    if (!sessionToken) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const linkSession = async () => {
+      try {
+        const installationId = ensureInstallationId() ?? readInstallationId();
+        if (!installationId) {
+          throw new Error("Unable to access this browser installation identity.");
+        }
+
+        const session = await claimSessionLink(sessionToken, installationId);
+        if (!session) {
+          throw new Error("The session link did not return a linked session.");
+        }
+
+        const resolvedState = getResolvedSessionState(session);
+        if (cancelled) {
+          return;
+        }
+
+        setMessage(
+          resolvedState.isConnected
+            ? "Link complete. Redirecting to your app..."
+            : "Link complete. Redirecting to the app...",
+        );
+
+        window.setTimeout(() => {
+          window.location.replace("/");
+        }, 1200);
+      } catch (error) {
+        console.error("Failed to link session", error);
+
+        if (!cancelled) {
+          setMessage("Unable to link this browser right now.");
+          setErrorMessage(error instanceof Error ? error.message : "Unexpected link failure.");
+        }
+      }
+    };
+
+    void linkSession();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (hasSessionToken) {
+    return (
+      <div className="page-container">
+        <h3 className="title-text">Solar-Powered Charging Station</h3>
+        <p className="description-text">{message}</p>
+
+        <div className="info-container">
+          <p className="info-text">
+            If the redirect does not continue automatically, open the app root again after linking.
+          </p>
+        </div>
+
+        {errorMessage ? (
+          <div className="info-container">
+            <p className="info-text">{errorMessage}</p>
+          </div>
+        ) : null}
+
+        {!hasSupabaseEnv() ? (
+          <div className="info-container">
+            <p className="info-text">{getSupabaseEnvErrorMessage()}</p>
+          </div>
+        ) : null}
+      </div>
+    );
   }
 
   return <LandingPage />;
-}
-
-export default function Home() {
-  return (
-    <Suspense fallback={<LandingPage />}>
-      <RootRouteContent />
-    </Suspense>
-  );
 }

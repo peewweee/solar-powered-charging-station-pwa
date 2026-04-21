@@ -1,4 +1,6 @@
 export const INSTALLATION_ID_STORAGE_KEY = "installation_id";
+const INSTALLATION_ID_COOKIE_NAME = "installation_id";
+const INSTALLATION_ID_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
 
 const UUID_V4_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -13,6 +15,41 @@ function getLocalStorage(): Storage | null {
   } catch {
     return null;
   }
+}
+
+function readCookie(name: string): string | null {
+  if (typeof document === "undefined") {
+    return null;
+  }
+
+  const cookiePrefix = `${name}=`;
+  const matchingCookie = document.cookie
+    .split(";")
+    .map((value) => value.trim())
+    .find((value) => value.startsWith(cookiePrefix));
+
+  if (!matchingCookie) {
+    return null;
+  }
+
+  const cookieValue = matchingCookie.slice(cookiePrefix.length);
+  return cookieValue ? decodeURIComponent(cookieValue) : null;
+}
+
+function writeCookie(value: string) {
+  if (typeof document === "undefined") {
+    return;
+  }
+
+  document.cookie = `${INSTALLATION_ID_COOKIE_NAME}=${encodeURIComponent(value)}; Max-Age=${INSTALLATION_ID_COOKIE_MAX_AGE_SECONDS}; Path=/; SameSite=Lax`;
+}
+
+function removeCookie() {
+  if (typeof document === "undefined") {
+    return;
+  }
+
+  document.cookie = `${INSTALLATION_ID_COOKIE_NAME}=; Max-Age=0; Path=/; SameSite=Lax`;
 }
 
 export function isValidInstallationId(value: unknown): value is string {
@@ -30,33 +67,47 @@ function createInstallationId(): string | null {
 
 export function readInstallationId(): string | null {
   const storage = getLocalStorage();
-  if (!storage) {
-    return null;
+  let storedValue: string | null = null;
+
+  if (storage) {
+    try {
+      storedValue = storage.getItem(INSTALLATION_ID_STORAGE_KEY);
+    } catch {
+      storedValue = null;
+    }
   }
 
-  try {
-    const storedValue = storage.getItem(INSTALLATION_ID_STORAGE_KEY);
+  if (isValidInstallationId(storedValue)) {
+    writeCookie(storedValue);
+    return storedValue;
+  }
 
-    if (!isValidInstallationId(storedValue)) {
-      if (storedValue !== null) {
-        storage.removeItem(INSTALLATION_ID_STORAGE_KEY);
+  if (storage && storedValue !== null) {
+    try {
+      storage.removeItem(INSTALLATION_ID_STORAGE_KEY);
+    } catch {
+      // Ignore storage cleanup failures.
+    }
+  }
+
+  const cookieValue = readCookie(INSTALLATION_ID_COOKIE_NAME);
+  if (isValidInstallationId(cookieValue)) {
+    if (storage) {
+      try {
+        storage.setItem(INSTALLATION_ID_STORAGE_KEY, cookieValue);
+      } catch {
+        // Ignore storage mirror failures and still return the cookie value.
       }
-
-      return null;
     }
 
-    return storedValue;
-  } catch {
-    return null;
+    return cookieValue;
   }
+
+  removeCookie();
+  return null;
 }
 
 export function ensureInstallationId(): string | null {
-  const storage = getLocalStorage();
-  if (!storage) {
-    return null;
-  }
-
   const existingInstallationId = readInstallationId();
   if (existingInstallationId) {
     return existingInstallationId;
@@ -67,10 +118,17 @@ export function ensureInstallationId(): string | null {
     return null;
   }
 
-  try {
-    storage.setItem(INSTALLATION_ID_STORAGE_KEY, nextInstallationId);
-    return readInstallationId();
-  } catch {
-    return null;
+  const storage = getLocalStorage();
+
+  writeCookie(nextInstallationId);
+
+  if (storage) {
+    try {
+      storage.setItem(INSTALLATION_ID_STORAGE_KEY, nextInstallationId);
+    } catch {
+      return readInstallationId();
+    }
   }
+
+  return readInstallationId();
 }

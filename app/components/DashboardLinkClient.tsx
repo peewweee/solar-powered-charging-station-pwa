@@ -31,6 +31,10 @@ export default function DashboardLinkClient() {
         }
 
         const session = await claimSessionLink(sessionToken, installationId);
+        if (!session) {
+          throw new Error("The session link did not return a linked session.");
+        }
+
         const resolvedState = getResolvedSessionState(session);
 
         if (cancelled) {
