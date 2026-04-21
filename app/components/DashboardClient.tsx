@@ -135,7 +135,7 @@ export default function DashboardClient() {
   }, [hasResolvedSessionOnce, sessionError, sessionPhase]);
 
   useEffect(() => {
-    if (!shouldTick) {
+    if (!shouldTick || sessionPhase !== "active") {
       return;
     }
 
@@ -160,7 +160,7 @@ export default function DashboardClient() {
     return () => {
       window.clearInterval(interval);
     };
-  }, [shouldTick]);
+  }, [sessionPhase, shouldTick]);
 
   useEffect(() => {
     async function fetchWeather() {
