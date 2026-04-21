@@ -8,6 +8,8 @@ import { getResolvedSessionState, type ResolvedSessionState } from "../lib/sessi
 import { resolveInstallationSession } from "../lib/session-backend";
 
 export default function DashboardClient() {
+  const ACTIVE_REFRESH_INTERVAL_MS = 3000;
+  const RECOVERY_REFRESH_INTERVAL_MS = 2000;
   const recoveryUrl = "http://192.168.4.1/";
   const [wifiTime, setWifiTime] = useState(0);
   const [sessionPhase, setSessionPhase] = useState<ResolvedSessionState["phase"]>("not_linked");
@@ -30,7 +32,6 @@ export default function DashboardClient() {
   const [hasResolvedSessionOnce, setHasResolvedSessionOnce] = useState(false);
 
   useEffect(() => {
-    let interval: number | null = null;
     let retryTimeout: number | null = null;
     let cancelled = false;
 
@@ -90,31 +91,12 @@ export default function DashboardClient() {
     };
 
     void resolveSession();
-    interval = window.setInterval(() => {
-      if (!shouldTick) {
-        return;
-      }
-
-      setWifiTime((current) => {
-        const nextValue = Math.max(0, current - 1);
-
-        if (nextValue === 0) {
-          setSessionPhase("expired");
-          setSessionMessage("Expired");
-          setSessionHelperText(
-            "Your last session has ended. Reconnect to SOLAR CONNECT, or open 192.168.4.1 if the portal does not appear.",
-          );
-          setShowRecoveryLink(true);
-          setShouldTick(false);
-        }
-
-        return nextValue;
-      });
-    }, 1000);
+    const refreshIntervalMs =
+      sessionPhase === "disconnected" || sessionError ? RECOVERY_REFRESH_INTERVAL_MS : ACTIVE_REFRESH_INTERVAL_MS;
 
     const refreshInterval = window.setInterval(() => {
       void resolveSession();
-    }, 5000);
+    }, refreshIntervalMs);
 
     const onVisibilityChange = () => {
       if (document.visibilityState === "visible") {
@@ -141,9 +123,6 @@ export default function DashboardClient() {
 
     return () => {
       cancelled = true;
-      if (interval !== null) {
-        window.clearInterval(interval);
-      }
       if (retryTimeout !== null) {
         window.clearTimeout(retryTimeout);
       }
@@ -153,7 +132,35 @@ export default function DashboardClient() {
       window.removeEventListener("pageshow", onPageShow);
       window.removeEventListener("online", onOnline);
     };
-  }, [hasResolvedSessionOnce, shouldTick]);
+  }, [hasResolvedSessionOnce, sessionError, sessionPhase]);
+
+  useEffect(() => {
+    if (!shouldTick) {
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      setWifiTime((current) => {
+        const nextValue = Math.max(0, current - 1);
+
+        if (nextValue === 0) {
+          setSessionPhase("expired");
+          setSessionMessage("Expired");
+          setSessionHelperText(
+            "Your last session has ended. Reconnect to SOLAR CONNECT, or open 192.168.4.1 if the portal does not appear.",
+          );
+          setShowRecoveryLink(true);
+          setShouldTick(false);
+        }
+
+        return nextValue;
+      });
+    }, 1000);
+
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, [shouldTick]);
 
   useEffect(() => {
     async function fetchWeather() {
