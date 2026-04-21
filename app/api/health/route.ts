@@ -8,7 +8,7 @@ export async function GET() {
     ok: Boolean(config),
     missingKeys: config ? [] : ["NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY"],
     notes: [
-      "Public Supabase config is required for /dashboard and /dashboard/link.",
+      "Public Supabase config is required for the root app flow and compatibility routes.",
       "This endpoint only reports readiness and does not expose secret values.",
     ],
   });

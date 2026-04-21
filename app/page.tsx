@@ -1,42 +1,53 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import DashboardLinkClient from "./components/DashboardLinkClient";
 
-export default function Home() {
-  useEffect(() => {
-    if (window.location.pathname === "/dashboard/link") {
-      return;
-    }
-
-    if (window.location.search.includes("session_token=")) {
-      window.location.replace(`/dashboard/link${window.location.search}`);
-    }
-  }, []);
-
+function LandingPage() {
   const goToDashboard = () => {
-    // Use standard browser navigation
-    window.location.href = "/dashboard"; 
+    window.location.href = "/dashboard";
   };
 
   return (
     <div className="page-container">
-      <h3 className="title-text">
-        Solar-Powered Charging Station
-      </h3>
+      <h3 className="title-text">Solar-Powered Charging Station</h3>
       <p className="description-text">
-        The solar-powered charging station provides free device charging and Wi-Fi access, promoting sustainability, connectivity, and academic productivity
+        The solar-powered charging station provides free device charging and Wi-Fi access,
+        promoting sustainability, connectivity, and academic productivity
       </p>
-      
+
       <button className="dashboard-button" onClick={goToDashboard}>
         Go to Dashboard
       </button>
 
-      {/* New Content Container */}
       <div className="info-container">
         <p className="info-text">
-          This application is part of the thesis project ‘Integrating Renewable Energy Solutions in PUP-CEA: Solar-Powered Charging Station Offering Connectivity’, developed by 4th Year Computer Engineering students of the Polytechnic University of the Philippines.
+          This application is part of the thesis project &lsquo;Integrating Renewable Energy
+          Solutions in PUP-CEA: Solar-Powered Charging Station Offering Connectivity&rsquo;,
+          developed by 4th Year Computer Engineering students of the Polytechnic University of
+          the Philippines.
         </p>
       </div>
     </div>
+  );
+}
+
+function RootRouteContent() {
+  const searchParams = useSearchParams();
+  const sessionToken = searchParams.get("session_token");
+
+  if (sessionToken) {
+    return <DashboardLinkClient />;
+  }
+
+  return <LandingPage />;
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<LandingPage />}>
+      <RootRouteContent />
+    </Suspense>
   );
 }

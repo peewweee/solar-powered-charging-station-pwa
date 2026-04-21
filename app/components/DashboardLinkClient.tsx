@@ -39,12 +39,12 @@ export default function DashboardLinkClient() {
 
         setMessage(
           resolvedState.isConnected
-            ? "Link complete. Redirecting to your dashboard..."
-            : "Link complete. Redirecting to dashboard...",
+            ? "Link complete. Redirecting to your app..."
+            : "Link complete. Redirecting to the app...",
         );
 
         window.setTimeout(() => {
-          router.replace("/dashboard");
+          router.replace("/");
         }, 1200);
       } catch (error) {
         console.error("Failed to link session", error);
@@ -70,7 +70,7 @@ export default function DashboardLinkClient() {
 
       <div className="info-container">
         <p className="info-text">
-          If the redirect does not continue automatically, open the dashboard again after linking.
+          If the redirect does not continue automatically, open the app root again after linking.
         </p>
       </div>
 
