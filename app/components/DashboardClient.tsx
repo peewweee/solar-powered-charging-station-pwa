@@ -27,10 +27,23 @@ export default function DashboardClient() {
     port4: "inactive",
     outlet: "inactive",
   });
+  const [hasResolvedSessionOnce, setHasResolvedSessionOnce] = useState(false);
 
   useEffect(() => {
     let interval: number | null = null;
+    let retryTimeout: number | null = null;
     let cancelled = false;
+
+    const applyResolvedState = (resolvedState: ResolvedSessionState) => {
+      setSessionPhase(resolvedState.phase);
+      setWifiTime(resolvedState.remainingSeconds);
+      setSessionMessage(resolvedState.label);
+      setSessionHelperText(resolvedState.helperText);
+      setShowRecoveryLink(resolvedState.needsRecoveryLink);
+      setShouldTick(resolvedState.shouldTick);
+      setSessionError(null);
+      setHasResolvedSessionOnce(true);
+    };
 
     const resolveSession = async () => {
       try {
@@ -46,26 +59,32 @@ export default function DashboardClient() {
           return;
         }
 
-        setSessionPhase(resolvedState.phase);
-        setWifiTime(resolvedState.remainingSeconds);
-        setSessionMessage(resolvedState.label);
-        setSessionHelperText(resolvedState.helperText);
-        setShowRecoveryLink(resolvedState.needsRecoveryLink);
-        setShouldTick(resolvedState.shouldTick);
-        setSessionError(null);
+        applyResolvedState(resolvedState);
       } catch (error) {
         console.error("Failed to resolve installation session", error);
 
         if (!cancelled) {
-          setSessionPhase("not_linked");
-          setWifiTime(0);
-          setSessionMessage("Connect to Station");
-          setSessionHelperText(
-            "We could not load your linked session right now. If you are connected to SOLAR CONNECT, open 192.168.4.1 to recover.",
-          );
-          setShowRecoveryLink(true);
-          setShouldTick(false);
           setSessionError(error instanceof Error ? error.message : "Unable to load session.");
+
+          // Keep the last known linked state during transient network changes.
+          if (!hasResolvedSessionOnce) {
+            setSessionPhase("not_linked");
+            setWifiTime(0);
+            setSessionMessage("Connect to Station");
+            setSessionHelperText(
+              "We could not load your linked session right now. If you are connected to SOLAR CONNECT, open 192.168.4.1 to recover.",
+            );
+            setShowRecoveryLink(true);
+            setShouldTick(false);
+          }
+
+          if (retryTimeout !== null) {
+            window.clearTimeout(retryTimeout);
+          }
+
+          retryTimeout = window.setTimeout(() => {
+            void resolveSession();
+          }, 2500);
         }
       }
     };
@@ -95,7 +114,7 @@ export default function DashboardClient() {
 
     const refreshInterval = window.setInterval(() => {
       void resolveSession();
-    }, 30000);
+    }, 5000);
 
     const onVisibilityChange = () => {
       if (document.visibilityState === "visible") {
@@ -103,17 +122,38 @@ export default function DashboardClient() {
       }
     };
 
+    const onWindowFocus = () => {
+      void resolveSession();
+    };
+
+    const onPageShow = () => {
+      void resolveSession();
+    };
+
+    const onOnline = () => {
+      void resolveSession();
+    };
+
     document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("focus", onWindowFocus);
+    window.addEventListener("pageshow", onPageShow);
+    window.addEventListener("online", onOnline);
 
     return () => {
       cancelled = true;
       if (interval !== null) {
         window.clearInterval(interval);
       }
+      if (retryTimeout !== null) {
+        window.clearTimeout(retryTimeout);
+      }
       window.clearInterval(refreshInterval);
       document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("focus", onWindowFocus);
+      window.removeEventListener("pageshow", onPageShow);
+      window.removeEventListener("online", onOnline);
     };
-  }, [shouldTick]);
+  }, [hasResolvedSessionOnce, shouldTick]);
 
   useEffect(() => {
     async function fetchWeather() {
