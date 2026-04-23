@@ -38,7 +38,7 @@ function LandingPage() {
 }
 
 export default function Home() {
-  const [hasSessionToken, setHasSessionToken] = useState(false);
+  const [isLinking, setIsLinking] = useState(false);
   const [message, setMessage] = useState("Linking your browser to the current session...");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -46,24 +46,23 @@ export default function Home() {
     const params = new URLSearchParams(window.location.search);
     const sessionToken = params.get("session_token");
 
-    setHasSessionToken(Boolean(sessionToken));
-
     if (!sessionToken) {
       return;
     }
 
     let cancelled = false;
+    setIsLinking(true);
 
     const linkSession = async () => {
       try {
         const installationId = ensureInstallationId() ?? readInstallationId();
         if (!installationId) {
-          throw new Error("Unable to access this browser installation identity.");
+          throw new Error("We could not open your app on this browser yet.");
         }
 
         const session = await claimSessionLink(sessionToken, installationId);
         if (!session) {
-          throw new Error("The session link did not return a linked session.");
+          throw new Error("We could not find a session to connect to right now.");
         }
 
         const resolvedState = getResolvedSessionState(session);
@@ -84,8 +83,12 @@ export default function Home() {
         console.error("Failed to link session", error);
 
         if (!cancelled) {
-          setMessage("Unable to link this browser right now.");
-          setErrorMessage(error instanceof Error ? error.message : "Unexpected link failure.");
+          setMessage("We could not connect this browser right now.");
+          setErrorMessage(
+            error instanceof Error
+              ? error.message
+              : "Please try again by getting your unique app link.",
+          );
         }
       }
     };
@@ -97,7 +100,7 @@ export default function Home() {
     };
   }, []);
 
-  if (hasSessionToken) {
+  if (isLinking || errorMessage) {
     return (
       <div className="page-container">
         <h3 className="title-text">Solar-Powered Charging Station</h3>
@@ -105,7 +108,7 @@ export default function Home() {
 
         <div className="info-container">
           <p className="info-text">
-            If the redirect does not continue automatically, open the app root again after linking.
+            If the app does not continue automatically, open your unique app link again.
           </p>
         </div>
 

@@ -20,19 +20,19 @@ export default function DashboardLinkClient() {
 
     const linkSession = async () => {
       if (!sessionToken) {
-        setMessage("This link is missing a session token.");
+        setMessage("This app link is incomplete.");
         return;
       }
 
       try {
         const installationId = ensureInstallationId() ?? readInstallationId();
         if (!installationId) {
-          throw new Error("Unable to access this browser installation identity.");
+          throw new Error("We could not open your app on this browser yet.");
         }
 
         const session = await claimSessionLink(sessionToken, installationId);
         if (!session) {
-          throw new Error("The session link did not return a linked session.");
+          throw new Error("We could not find a session to connect to right now.");
         }
 
         const resolvedState = getResolvedSessionState(session);
@@ -54,8 +54,12 @@ export default function DashboardLinkClient() {
         console.error("Failed to link session", error);
 
         if (!cancelled) {
-          setMessage("Unable to link this browser right now.");
-          setErrorMessage(error instanceof Error ? error.message : "Unexpected link failure.");
+          setMessage("We could not connect this browser right now.");
+          setErrorMessage(
+            error instanceof Error
+              ? error.message
+              : "Please try again by getting your unique app link.",
+          );
         }
       }
     };
@@ -74,7 +78,7 @@ export default function DashboardLinkClient() {
 
       <div className="info-container">
         <p className="info-text">
-          If the redirect does not continue automatically, open the app root again after linking.
+          If the app does not continue automatically, open your unique app link again.
         </p>
       </div>
 

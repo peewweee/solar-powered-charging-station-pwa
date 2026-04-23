@@ -64,7 +64,7 @@ export default function DashboardClient() {
         console.error("Failed to resolve installation session", error);
 
         if (!cancelled) {
-          setSessionError(error instanceof Error ? error.message : "Unable to load session.");
+          setSessionError("We could not refresh your session right now.");
 
           // Keep the last known linked state during transient network changes.
           if (!hasResolvedSessionOnce) {
@@ -72,7 +72,7 @@ export default function DashboardClient() {
             setWifiTime(0);
             setSessionMessage("Connect to Station");
             setSessionHelperText(
-              "We could not load your linked session right now. If you are connected to SOLAR CONNECT, open 192.168.4.1 to recover.",
+              "You are disconnected. If you just connected to 'SOLAR CONNECT',",
             );
             setShowRecoveryLink(true);
             setShouldTick(false);
@@ -145,10 +145,8 @@ export default function DashboardClient() {
         if (nextValue === 0) {
           setSessionPhase("expired");
           setSessionMessage("Expired");
-          setSessionHelperText(
-            "Your last session has ended. Reconnect to SOLAR CONNECT, or open 192.168.4.1 if the portal does not appear.",
-          );
-          setShowRecoveryLink(true);
+          setSessionHelperText("Your one-hour session has ended. Come back again tomorrow.");
+          setShowRecoveryLink(false);
           setShouldTick(false);
         }
 

@@ -126,9 +126,8 @@ export function getResolvedSessionState(session: SessionRecord | null, now = Dat
       isConnected: false,
       remainingSeconds: 0,
       label: "Expired",
-      helperText:
-        "Your last session has ended. Reconnect to SOLAR CONNECT, or open 192.168.4.1 if the portal does not appear.",
-      needsRecoveryLink: true,
+      helperText: "Your one-hour session has ended. Come back again tomorrow.",
+      needsRecoveryLink: false,
       shouldTick: false,
     };
   }
@@ -140,7 +139,7 @@ export function getResolvedSessionState(session: SessionRecord | null, now = Dat
       remainingSeconds,
       label: "Disconnected",
       helperText:
-        "Your linked session is currently disconnected or paused. Reconnect to SOLAR CONNECT, or open 192.168.4.1 to recover.",
+        "Your session is currently disconnected or paused. If you just connected to 'SOLAR CONNECT',",
       needsRecoveryLink: true,
       shouldTick: false,
     };
@@ -153,7 +152,7 @@ export function getResolvedSessionState(session: SessionRecord | null, now = Dat
       remainingSeconds,
       label: "Disconnected",
       helperText:
-        "A linked session exists but is not currently active on this device. Reconnect to SOLAR CONNECT, or open 192.168.4.1 to recover.",
+        "Your session is not active right now. If you just connected to 'SOLAR CONNECT',",
       needsRecoveryLink: true,
       shouldTick: false,
     };
