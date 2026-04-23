@@ -139,7 +139,7 @@ export default function InstallPrompt() {
           <IconClose />
         </button>
 
-        <p id="install-prompt-title" className="install-prompt-title">Install the app</p>
+        <p id="install-prompt-title" className="install-prompt-title">Add to Home Screen</p>
 
         <div className="install-prompt-app">
           <img
