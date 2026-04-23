@@ -139,8 +139,8 @@ export function getResolvedSessionState(session: SessionRecord | null, now = Dat
       remainingSeconds,
       label: "Disconnected",
       helperText:
-        "Your session is currently disconnected or paused. If you just connected to 'SOLAR CONNECT',",
-      needsRecoveryLink: true,
+        "Your session is currently disconnected or paused.",
+      needsRecoveryLink: false,
       shouldTick: false,
     };
   }
@@ -152,7 +152,7 @@ export function getResolvedSessionState(session: SessionRecord | null, now = Dat
       remainingSeconds,
       label: "Disconnected",
       helperText:
-        "Your session is not active right now. If you just connected to 'SOLAR CONNECT',",
+        "You are disconnected. If you just connected to 'SOLAR CONNECT',",
       needsRecoveryLink: true,
       shouldTick: false,
     };
