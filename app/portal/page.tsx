@@ -81,7 +81,7 @@ export default function PortalRecoveryPage() {
         <div className="info-container">
           <p className="info-text">
             Open your phone&apos;s Wi-Fi settings and connect to &apos;SOLAR CONNECT&apos; manually.
-            Follow the on-screen instructions to complete the connection.
+            Follow the on-screen instructions to get your unique app link.
           </p>
         </div>
     </div>
