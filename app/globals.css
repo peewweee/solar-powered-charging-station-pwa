@@ -96,6 +96,90 @@ a {
   font-weight: 400;
   line-height: 13.857px; 
 }
+
+.install-prompt-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 28px 18px;
+}
+
+.install-prompt-card {
+  position: relative;
+  width: 100%;
+  max-width: 360px;
+  border-radius: 24px;
+  background: #262626;
+  color: #F5F5F5;
+  padding: 24px 20px 20px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+}
+
+.install-prompt-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: #D4D4D4;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.install-prompt-title {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.1;
+  margin-bottom: 18px;
+}
+
+.install-prompt-app {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border-radius: 20px;
+  background: #333338;
+  padding: 16px;
+}
+
+.install-prompt-app-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  object-fit: cover;
+}
+
+.install-prompt-app-name {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.install-prompt-app-domain {
+  margin-top: 4px;
+  color: #A3A3A3;
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.install-prompt-steps {
+  margin: 20px 0 0;
+  padding-left: 22px;
+  color: #E5E5E5;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.install-prompt-steps li + li {
+  margin-top: 10px;
+}
 /* END OF SPLASH SCREEN */
 
 

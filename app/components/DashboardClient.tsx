@@ -187,7 +187,7 @@ export default function DashboardClient() {
     return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
   };
 
-  const recoveryUrl = sessionPhase === "not_linked" ? "/portal" : "http://192.168.4.1/";
+  const recoveryUrl = "http://192.168.4.1/";
   const isActive = sessionPhase === "active";
   const showCountdown = sessionPhase === "active" || sessionPhase === "disconnected" || sessionPhase === "expired";
   const wifiDisplay = showCountdown ? formatTime(wifiTime) : "Offline";

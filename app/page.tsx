@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import InstallPrompt from "./components/InstallPrompt";
 import { ensureInstallationId, readInstallationId } from "./lib/installation-id";
 import { getSupabaseEnvErrorMessage, hasSupabaseEnv } from "./lib/supabase";
 import { getResolvedSessionState } from "./lib/session";
@@ -13,6 +14,7 @@ function LandingPage() {
 
   return (
     <div className="page-container">
+      <InstallPrompt />
       <h3 className="title-text">Solar-Powered Charging Station</h3>
       <p className="description-text">
         The solar-powered charging station provides free device charging and Wi-Fi access,
