@@ -71,10 +71,15 @@ export default function DashboardLinkClient() {
     };
   }, [router, sessionToken]);
 
+  const showSpinner = !errorMessage && !!sessionToken;
+
   return (
     <div className="page-container">
       <h3 className="title-text">Solar-Powered Charging Station</h3>
-      <p className="description-text">{message}</p>
+      <p className="description-text">
+        {showSpinner ? <span className="inline-spinner" aria-hidden="true" /> : null}
+        {message}
+      </p>
 
       <div className="info-container">
         <p className="info-text">

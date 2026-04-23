@@ -77,7 +77,14 @@ export default function InstallPrompt() {
     <div className="install-prompt-overlay">
       <div className="install-prompt-card">
         <button className="install-prompt-close" onClick={dismissPrompt} aria-label="Close install prompt">
-          x
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+            <path
+              d="M3 3L11 11M11 3L3 11"
+              stroke="currentColor"
+              strokeWidth="1.75"
+              strokeLinecap="round"
+            />
+          </svg>
         </button>
 
         <p className="install-prompt-title">Add to Home Screen</p>
@@ -113,6 +120,10 @@ export default function InstallPrompt() {
             <li>Confirm to save the app to your home screen.</li>
           </ol>
         )}
+
+        <button className="install-prompt-dismiss" onClick={dismissPrompt}>
+          Maybe later
+        </button>
       </div>
     </div>
   );

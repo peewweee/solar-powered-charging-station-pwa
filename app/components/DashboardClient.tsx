@@ -194,36 +194,34 @@ export default function DashboardClient() {
     <div className="dashboard-container">
       <h2 className="dashboard-title">Dashboard</h2>
 
-      <div className="wifi-container">
+      <div className="wifi-container" data-phase={sessionPhase}>
         <div className="wifi-time" style={{ color: isActive ? "#998A64" : "#6F1D1B" }}>
           {wifiDisplay}
         </div>
         <div className="wifi-text">
-          <span className="wifi-bold">Wi-Fi Status</span>
-          <br />
+          <span className="wifi-bold">
+            <span className="status-dot" data-phase={sessionPhase} aria-hidden="true" />
+            Wi-Fi Status
+          </span>
           <span className="wifi-subtext">{sessionMessage ?? "Connect to Station"}</span>
         </div>
       </div>
 
       {sessionError ? (
-        <div style={{ marginTop: "10px", color: "#F1E8E8", fontSize: "12px" }}>{sessionError}</div>
+        <div className="session-notice">{sessionError}</div>
       ) : null}
 
       {!isActive && sessionHelperText ? (
-        <div style={{ marginTop: "10px", color: "#F1E8E8", fontSize: "12px" }}>
+        <div className="session-notice">
           <span>{sessionHelperText} </span>
           {showRecoveryLink ? (
-            <a href={recoveryUrl} style={{ color: "#F1E8E8", textDecoration: "underline" }}>
-              get your unique app link.
-            </a>
+            <a href={recoveryUrl}>get your unique app link.</a>
           ) : null}
         </div>
       ) : null}
 
       {!hasSupabaseEnv() ? (
-        <div style={{ marginTop: "10px", color: "#F1E8E8", fontSize: "12px" }}>
-          {getSupabaseEnvErrorMessage()}
-        </div>
+        <div className="session-notice">{getSupabaseEnvErrorMessage()}</div>
       ) : null}
 
       <div className="line-separator"></div>
@@ -269,22 +267,10 @@ export default function DashboardClient() {
           flexWrap: "nowrap",
         }}
       >
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "6px" }}>
+        <div className="metric-column">
           <h3 className="port-title">Battery Percentage</h3>
-          <div
-            style={{
-              marginTop: "10px",
-              background: "rgba(67, 17, 16, 0.3)",
-              height: "53.33px",
-              borderRadius: "10.667px",
-              padding: "13px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              color: "#F1E8E8",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+          <div className="metric-tile">
+            <div className="metric-tile-inner">
               <BatteryGauge
                 value={batteryPercentage}
                 size={60}
@@ -314,34 +300,25 @@ export default function DashboardClient() {
                 }}
               />
 
-              <span style={{ fontSize: "20px", fontWeight: "bold" }}>{batteryPercentage}%</span>
+              <span className="metric-value">{batteryPercentage}%</span>
             </div>
           </div>
         </div>
 
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "6px" }}>
+        <div className="metric-column">
           <h3 className="port-title">Weather</h3>
-          <div
-            style={{
-              marginTop: "10px",
-              background: "rgba(67, 17, 16, 0.3)",
-              height: "53.33px",
-              borderRadius: "10.667px",
-              padding: "13px",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              color: "#F1E8E8",
-            }}
-          >
+          <div className="metric-tile">
             {loadingWeather ? (
-              <span style={{ fontSize: "16px" }}>Loading...</span>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", width: "100%" }}>
+                <span className="skeleton-line sm" />
+                <span className="skeleton-line md" />
+              </div>
             ) : weather ? (
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <span style={{ fontSize: "12px", fontWeight: "400" }}>
+                <span style={{ fontSize: "13px", fontWeight: 600 }}>
                   {Math.round(weather.temp)}&deg;C
                 </span>
-                <span style={{ fontSize: "12px" }}>{weather.desc}</span>
+                <span style={{ fontSize: "12px", opacity: 0.85 }}>{weather.desc}</span>
                 <img
                   src={`https://openweathermap.org/img/wn/${weather.icon}.png`}
                   alt={weather.desc}
@@ -350,7 +327,7 @@ export default function DashboardClient() {
                 />
               </div>
             ) : (
-              <span style={{ fontSize: "16px" }}>Weather unavailable</span>
+              <span style={{ fontSize: "13px", opacity: 0.7 }}>Weather unavailable</span>
             )}
           </div>
         </div>
@@ -380,39 +357,14 @@ const Announcements = () => {
       href="https://www.pup.edu.ph/"
       target="_blank"
       rel="noopener noreferrer"
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        background: "rgba(67, 17, 16, 0.35)",
-        borderRadius: "12px",
-        padding: "12px",
-        width: "100%",
-        height: "240px",
-        textDecoration: "none",
-        color: "#F1E8E8",
-        overflow: "hidden",
-        cursor: "pointer",
-        transition: "0.2s",
-        marginBottom: "40px",
-      }}
-      onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(67, 17, 16, 0.5)")}
-      onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(67, 17, 16, 0.35)")}
+      className="announcements-card"
     >
-      <div
-        style={{
-          width: "100%",
-          height: "165px",
-          background: "url('/announcements/preview.png') center/cover no-repeat",
-          borderRadius: "10px",
-          marginBottom: "10px",
-        }}
-      ></div>
-
+      <div className="announcements-preview" />
       <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-        <span style={{ fontSize: "14px", fontWeight: "600" }}>
+        <span className="announcements-heading">
           Polytechnic University of the Philippines
         </span>
-        <span style={{ fontSize: "12px", opacity: 0.8 }}>Click to visit website &rarr;</span>
+        <span className="announcements-sub">Click to visit website &rarr;</span>
       </div>
     </a>
   );
