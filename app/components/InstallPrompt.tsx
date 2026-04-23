@@ -4,12 +4,21 @@ import { useEffect, useState } from "react";
 
 const DISMISS_KEY = "install_prompt_dismissed";
 
+type NavigatorWithStandalone = Navigator & {
+  standalone?: boolean;
+};
+
 function isStandaloneMode() {
   if (typeof window === "undefined") {
     return false;
   }
 
-  return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+  const navigatorWithStandalone = window.navigator as NavigatorWithStandalone;
+
+  return (
+    window.matchMedia("(display-mode: standalone)").matches ||
+    navigatorWithStandalone.standalone === true
+  );
 }
 
 export default function InstallPrompt() {
