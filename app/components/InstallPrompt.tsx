@@ -21,8 +21,54 @@ function isStandaloneMode() {
   );
 }
 
+/* ---------- Inline icons (stroke uses currentColor) ---------- */
+
+const IconShare = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M12 3v13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M7 8l5-5 5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const IconMore = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const IconPlusSquare = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <rect x="4" y="4" width="16" height="16" rx="3" stroke="currentColor" strokeWidth="1.8" />
+    <path d="M12 8v8M8 12h8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+  </svg>
+);
+
+const IconKebab = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <circle cx="12" cy="5" r="1.6" fill="currentColor" />
+    <circle cx="12" cy="12" r="1.6" fill="currentColor" />
+    <circle cx="12" cy="19" r="1.6" fill="currentColor" />
+  </svg>
+);
+
+const IconHomeAdd = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M4 10.5L12 4l8 6.5V19a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1v-8.5z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+    <circle cx="18" cy="7" r="3.2" fill="#262626" stroke="currentColor" strokeWidth="1.6" />
+    <path d="M18 5.4v3.2M16.4 7h3.2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+  </svg>
+);
+
+const IconClose = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+    <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+  </svg>
+);
+
 export default function InstallPrompt() {
   const [isVisible, setIsVisible] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
   const [isIosSafari, setIsIosSafari] = useState(false);
   const [isAndroidChrome, setIsAndroidChrome] = useState(false);
 
@@ -66,7 +112,8 @@ export default function InstallPrompt() {
       // Ignore storage access issues when dismissing.
     }
 
-    setIsVisible(false);
+    setIsClosing(true);
+    window.setTimeout(() => setIsVisible(false), 220);
   };
 
   if (!isVisible) {
@@ -74,20 +121,25 @@ export default function InstallPrompt() {
   }
 
   return (
-    <div className="install-prompt-overlay">
-      <div className="install-prompt-card">
+    <div
+      className={`install-prompt-overlay${isClosing ? " is-closing" : ""}`}
+      onClick={dismissPrompt}
+      role="presentation"
+    >
+      <div
+        className="install-prompt-card"
+        onClick={(event) => event.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="install-prompt-title"
+      >
+        <div className="install-prompt-grabber" aria-hidden="true" />
+
         <button className="install-prompt-close" onClick={dismissPrompt} aria-label="Close install prompt">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-            <path
-              d="M3 3L11 11M11 3L3 11"
-              stroke="currentColor"
-              strokeWidth="1.75"
-              strokeLinecap="round"
-            />
-          </svg>
+          <IconClose />
         </button>
 
-        <p className="install-prompt-title">Add to Home Screen</p>
+        <p id="install-prompt-title" className="install-prompt-title">Install the app</p>
 
         <div className="install-prompt-app">
           <img
@@ -103,20 +155,54 @@ export default function InstallPrompt() {
 
         {isIosSafari ? (
           <ol className="install-prompt-steps">
-            <li>Press the Share button in the browser toolbar.</li>
-            <li>Scroll the actions list if needed.</li>
-            <li>Select Add to Home Screen.</li>
+            <li>
+              Press{" "}
+              <span className="step-pill"><IconShare /></span>{" "}
+              in the browser toolbar.
+            </li>
+            <li>
+              Tap{" "}
+              <span className="step-pill">View more <IconMore /></span>{" "}
+              to see all available actions.
+            </li>
+            <li>
+              Select{" "}
+              <span className="step-pill"><IconPlusSquare /> Add to Home Screen</span>
+              .
+            </li>
           </ol>
         ) : isAndroidChrome ? (
           <ol className="install-prompt-steps">
-            <li>Press the browser menu in the top-right corner.</li>
-            <li>Tap Add to Home screen or Install app.</li>
+            <li>
+              Press{" "}
+              <span className="step-pill"><IconKebab /></span>{" "}
+              in the top-right corner.
+            </li>
+            <li>
+              Tap{" "}
+              <span className="step-pill"><IconHomeAdd /> Add to Home screen</span>
+              {" "}or{" "}
+              <span className="step-pill">Install app</span>
+              .
+            </li>
             <li>Confirm the install prompt.</li>
           </ol>
         ) : (
           <ol className="install-prompt-steps">
-            <li>Open the browser menu or share actions.</li>
-            <li>Look for Add to Home Screen or Install app.</li>
+            <li>
+              Open the{" "}
+              <span className="step-pill"><IconKebab /></span>{" "}
+              browser menu or{" "}
+              <span className="step-pill"><IconShare /></span>{" "}
+              share actions.
+            </li>
+            <li>
+              Look for{" "}
+              <span className="step-pill"><IconHomeAdd /> Add to Home Screen</span>
+              {" "}or{" "}
+              <span className="step-pill">Install app</span>
+              .
+            </li>
             <li>Confirm to save the app to your home screen.</li>
           </ol>
         )}
