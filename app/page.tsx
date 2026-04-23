@@ -39,8 +39,11 @@ function LandingPage() {
 
 export default function Home() {
   const [hasSessionToken, setHasSessionToken] = useState(false);
-  const [message, setMessage] = useState("Linking your browser to the current session...");
+  const [message, setMessage] = useState("Preparing your app link...");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [handoffRequested, setHandoffRequested] = useState(false);
+  const [linkingStarted, setLinkingStarted] = useState(false);
+  const [countdown, setCountdown] = useState(4);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -53,9 +56,14 @@ export default function Home() {
     }
 
     let cancelled = false;
+    let startTimeout: number | null = null;
+    let countdownInterval: number | null = null;
 
     const linkSession = async () => {
       try {
+        setLinkingStarted(true);
+        setMessage("Linking your browser to the current session...");
+
         const installationId = ensureInstallationId() ?? readInstallationId();
         if (!installationId) {
           throw new Error("Unable to access this browser installation identity.");
@@ -90,12 +98,84 @@ export default function Home() {
       }
     };
 
-    void linkSession();
+    countdownInterval = window.setInterval(() => {
+      setCountdown((current) => (current > 1 ? current - 1 : 1));
+    }, 1000);
+
+    startTimeout = window.setTimeout(() => {
+      if (!handoffRequested && !linkingStarted) {
+        void linkSession();
+      }
+    }, 4000);
 
     return () => {
       cancelled = true;
+      if (startTimeout !== null) {
+        window.clearTimeout(startTimeout);
+      }
+      if (countdownInterval !== null) {
+        window.clearInterval(countdownInterval);
+      }
     };
-  }, []);
+  }, [handoffRequested, linkingStarted]);
+
+  const openInBrowser = () => {
+    setHandoffRequested(true);
+    setErrorMessage(null);
+    setMessage("Switch to your regular browser to continue linking there.");
+    window.open(window.location.href, "_blank", "noopener,noreferrer");
+  };
+
+  const continueHere = () => {
+    if (linkingStarted) {
+      return;
+    }
+
+    setCountdown(1);
+    setLinkingStarted(true);
+    setErrorMessage(null);
+    setMessage("Linking your browser to the current session...");
+
+    const params = new URLSearchParams(window.location.search);
+    const sessionToken = params.get("session_token");
+
+    if (!sessionToken) {
+      setMessage("This link is missing a session token.");
+      return;
+    }
+
+    const run = async () => {
+      try {
+        const installationId = ensureInstallationId() ?? readInstallationId();
+        if (!installationId) {
+          throw new Error("Unable to access this browser installation identity.");
+        }
+
+        const session = await claimSessionLink(sessionToken, installationId);
+        if (!session) {
+          throw new Error("The session link did not return a linked session.");
+        }
+
+        const resolvedState = getResolvedSessionState(session);
+
+        setMessage(
+          resolvedState.isConnected
+            ? "Link complete. Redirecting to your app..."
+            : "Link complete. Redirecting to the app...",
+        );
+
+        window.setTimeout(() => {
+          window.location.replace("/");
+        }, 1200);
+      } catch (error) {
+        console.error("Failed to link session", error);
+        setMessage("Unable to link this browser right now.");
+        setErrorMessage(error instanceof Error ? error.message : "Unexpected link failure.");
+      }
+    };
+
+    void run();
+  };
 
   if (hasSessionToken) {
     return (
@@ -105,9 +185,35 @@ export default function Home() {
 
         <div className="info-container">
           <p className="info-text">
-            If the redirect does not continue automatically, open the app root again after linking.
+            If this opened inside the captive portal browser, open it in your regular browser first so
+            you can add the PWA to your home screen.
           </p>
         </div>
+
+        {!linkingStarted ? (
+          <>
+            <button className="dashboard-button" onClick={openInBrowser}>
+              Open in Safari / Browser
+            </button>
+
+            <button
+              className="dashboard-button"
+              onClick={continueHere}
+              style={{ marginTop: "16px", background: "#321E12", color: "#F1E8E8" }}
+            >
+              Continue Here ({countdown})
+            </button>
+          </>
+        ) : null}
+
+        {handoffRequested ? (
+          <div className="info-container">
+            <p className="info-text">
+              If your regular browser does not open automatically, use your phone&apos;s browser menu
+              to open this page in Safari or your default browser.
+            </p>
+          </div>
+        ) : null}
 
         {errorMessage ? (
           <div className="info-container">
