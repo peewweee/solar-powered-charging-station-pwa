@@ -6,6 +6,12 @@ import { ensureInstallationId, readInstallationId } from "../lib/installation-id
 import { getSupabaseEnvErrorMessage, hasSupabaseEnv } from "../lib/supabase";
 import { getResolvedSessionState, type ResolvedSessionState } from "../lib/session";
 import { resolveInstallationSession } from "../lib/session-backend";
+import {
+  fetchStationSnapshot,
+  portDisplayStatus,
+  type PortKey,
+  type PortStatus,
+} from "../lib/station-state";
 
 export default function DashboardClient() {
   const ACTIVE_REFRESH_INTERVAL_MS = 3000;
@@ -18,17 +24,12 @@ export default function DashboardClient() {
   const [shouldTick, setShouldTick] = useState(false);
   const [sessionError, setSessionError] = useState<string | null>(null);
 
-  const [batteryPercentage, setBatteryPercentage] = useState(60);
   const [weather, setWeather] = useState<{ temp: number; desc: string; icon: string } | null>(null);
   const [loadingWeather, setLoadingWeather] = useState(true);
-  const [portStatus] = useState({
-    port1: "inactive",
-    port2: "inactive",
-    port3: "inactive",
-    port4: "inactive",
-    outlet: "inactive",
-  });
   const [hasResolvedSessionOnce, setHasResolvedSessionOnce] = useState(false);
+
+  const [portStatus, setPortStatus] = useState<Partial<Record<PortKey, PortStatus>>>({});
+  const [batteryPercent, setBatteryPercent] = useState<number | null>(null);
 
   useEffect(() => {
     let retryTimeout: number | null = null;
@@ -179,6 +180,40 @@ export default function DashboardClient() {
     void fetchWeather();
   }, []);
 
+  useEffect(() => {
+    const STATION_REFRESH_INTERVAL_MS = 5000;
+    let cancelled = false;
+
+    const refresh = async () => {
+      try {
+        const snapshot = await fetchStationSnapshot();
+        if (cancelled) return;
+        setPortStatus(snapshot.ports);
+        if (snapshot.batteryPercent !== null) {
+          setBatteryPercent(Math.round(snapshot.batteryPercent));
+        }
+      } catch (error) {
+        // Keep last-known values on transient failures; the dashboard
+        // shouldn't flash "all available" just because a poll missed.
+        console.warn("Failed to refresh station snapshot", error);
+      }
+    };
+
+    void refresh();
+    const interval = window.setInterval(refresh, STATION_REFRESH_INTERVAL_MS);
+
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void refresh();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, []);
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -230,29 +265,14 @@ export default function DashboardClient() {
         <h3 className="port-title">Available Ports</h3>
         <div className="port-list-container">
           <div className="port-left-items">
-            <PortItem
-              name="USB-A 1"
-              status={portStatus.port1 === "active" ? "Unavailable" : "Available"}
-            />
-            <PortItem
-              name="USB-A 2"
-              status={portStatus.port2 === "active" ? "Unavailable" : "Available"}
-            />
-            <PortItem
-              name="Outlet"
-              status={portStatus.outlet === "active" ? "Unavailable" : "Available"}
-            />
+            <PortItem name="USB-A 1" status={portDisplayStatus(portStatus.usb_a_1)} />
+            <PortItem name="USB-A 2" status={portDisplayStatus(portStatus.usb_a_2)} />
+            <PortItem name="Outlet" status={portDisplayStatus(portStatus.outlet)} />
           </div>
 
           <div className="port-right-items">
-            <PortItem
-              name="USB-C 1"
-              status={portStatus.port3 === "active" ? "Unavailable" : "Available"}
-            />
-            <PortItem
-              name="USB-C 2"
-              status={portStatus.port4 === "active" ? "Unavailable" : "Available"}
-            />
+            <PortItem name="USB-C 1" status={portDisplayStatus(portStatus.usb_c_1)} />
+            <PortItem name="USB-C 2" status={portDisplayStatus(portStatus.usb_c_2)} />
           </div>
         </div>
       </div>
@@ -270,38 +290,45 @@ export default function DashboardClient() {
         <div className="metric-column">
           <h3 className="port-title">Battery Percentage</h3>
           <div className="metric-tile">
-            <div className="metric-tile-inner">
-              <BatteryGauge
-                value={batteryPercentage}
-                size={60}
-                customization={{
-                  batteryBody: {
-                    strokeColor: "#FFFFFF",
-                    strokeWidth: 3,
-                    fill: "transparent",
-                    cornerRadius: 4,
-                  },
-                  batteryCap: {
-                    fill: "transparent",
-                    strokeColor: "#FFFFFF",
-                    strokeWidth: 3,
-                    cornerRadius: 2,
-                  },
-                  batteryMeter: {
-                    fill: "#FFFFFF",
-                    lowBatteryFill: "#FFFFFF",
-                    noOfCells: 1,
-                  },
-                  readingText: {
-                    lightContrastColor: "#FFFFFF",
-                    darkContrastColor: "#FFFFFF",
-                    fontSize: 0,
-                  },
-                }}
-              />
+            {batteryPercent === null ? (
+              <div style={{ display: "flex", alignItems: "center", gap: "14px", width: "100%" }}>
+                <span className="skeleton-line sm" style={{ height: "20px" }} />
+                <span className="skeleton-line md" />
+              </div>
+            ) : (
+              <div className="metric-tile-inner">
+                <BatteryGauge
+                  value={batteryPercent}
+                  size={60}
+                  customization={{
+                    batteryBody: {
+                      strokeColor: "#FFFFFF",
+                      strokeWidth: 3,
+                      fill: "transparent",
+                      cornerRadius: 4,
+                    },
+                    batteryCap: {
+                      fill: "transparent",
+                      strokeColor: "#FFFFFF",
+                      strokeWidth: 3,
+                      cornerRadius: 2,
+                    },
+                    batteryMeter: {
+                      fill: "#FFFFFF",
+                      lowBatteryFill: "#FFFFFF",
+                      noOfCells: 1,
+                    },
+                    readingText: {
+                      lightContrastColor: "#FFFFFF",
+                      darkContrastColor: "#FFFFFF",
+                      fontSize: 0,
+                    },
+                  }}
+                />
 
-              <span className="metric-value">{batteryPercentage}%</span>
-            </div>
+                <span className="metric-value">{batteryPercent}%</span>
+              </div>
+            )}
           </div>
         </div>
 
