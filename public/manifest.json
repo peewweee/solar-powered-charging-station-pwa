@@ -1,6 +1,6 @@
 {
-  "name": "SPCS",
-  "short_name": "SPCS",
+  "name": "Solar Connect",
+  "short_name": "Solar Connect",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#1E120B",

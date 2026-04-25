@@ -27,12 +27,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* PWA iOS Support */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="SPCS" />
+        <meta name="apple-mobile-web-app-title" content="Solar Connect" />
 
         {/* Description */}
         <meta
           name="description"
-          content="SPCS: Solar Powered Charging Station with real-time monitoring."
+          content="Solar Connect: Solar Powered Charging Station with real-time monitoring."
         />
       </head>
 
