@@ -149,7 +149,7 @@ export default function InstallPrompt() {
           />
           <div>
             <p className="install-prompt-app-name">Solar Powered Charging Station</p>
-            <p className="install-prompt-app-domain">spcs-v1.vercel.app</p>
+            <p className="install-prompt-app-domain">solarconnect.live</p>
           </div>
         </div>
 
