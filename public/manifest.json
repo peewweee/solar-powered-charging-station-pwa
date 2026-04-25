@@ -3,8 +3,8 @@
   "short_name": "SPCS",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#FFFFFF",
-  "theme_color": "#BB9457",
+  "background_color": "#1E120B",
+  "theme_color": "#1E120B",
   "icons": [
     {
       "src": "/icons/icon-192x192.png",

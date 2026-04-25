@@ -11,6 +11,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         {/* Manifest */}
         <link rel="manifest" href="/manifest.json" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 
         {/* Favicon */}
         <link rel="icon" href="/icons/icon-192x192.png" />
@@ -21,8 +22,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="apple-touch-icon" sizes="1024x1024" href="/icons/icon-1024x1024.png" />
 
         {/* PWA Theme */}
-        <meta name="theme-color" content="#BB9457" />
-        <meta name="background-color" content="#FFFFFF" />
+        <meta name="theme-color" content="#1E120B" />
+        <meta name="background-color" content="#1E120B" />
 
         {/* PWA iOS Support */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
