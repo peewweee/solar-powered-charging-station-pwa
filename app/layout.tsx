@@ -31,7 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
         {/* PWA iOS Support */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="SPCS" />
 
         {/* Description */}
@@ -42,6 +42,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
 
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <div className="ios-status-bar-fill" aria-hidden="true" />
         <InstallationIdentityBootstrap />
         {children}
       </body>
