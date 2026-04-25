@@ -1,4 +1,4 @@
-# 🚀 Solar Powered Charging Station (PWA)
+# 🚀 Solar Connect (PWA)
 
 A modern Progressive Web App built using **Next.js**, **TypeScript**, and **TailwindCSS**, that provides real-time updates, including the number of occupied charging ports, battery status, date and time, current weather information from Google Weather, and announcements related to the Polytechnic University of the Philippines (PUP) powered by [`@ducanh2912/next-pwa`](https://www.npmjs.com/package/@ducanh2912/next-pwa) for offline support and caching.
 

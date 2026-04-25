@@ -145,10 +145,10 @@ export default function InstallPrompt() {
           <img
             className="install-prompt-app-icon"
             src="/icons/icon-192x192.png"
-            alt="Solar Powered Charging Station icon"
+            alt="Solar Connect icon"
           />
           <div>
-            <p className="install-prompt-app-name">Solar Powered Charging Station</p>
+            <p className="install-prompt-app-name">Solar Connect</p>
             <p className="install-prompt-app-domain">solarconnect.live</p>
           </div>
         </div>
