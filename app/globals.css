@@ -37,6 +37,7 @@
    ============================================================= */
 html {
   background-color: #1E120B;
+  color-scheme: dark;
 }
 
 html, body {
@@ -62,6 +63,7 @@ body {
   min-height: 100vh;
   min-height: 100dvh;
   color: var(--brand-yellow-soft);
+  isolation: isolate;
 }
 
 body::before {
@@ -70,6 +72,18 @@ body::before {
   inset: 0;
   z-index: -1;
   background: linear-gradient(180deg, var(--brand-brown-base) 37.98%, var(--brand-yellow) 100%);
+  pointer-events: none;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: max(env(safe-area-inset-top, 0px), 48px);
+  z-index: 0;
+  background: #1E120B;
   pointer-events: none;
 }
 
@@ -98,6 +112,8 @@ a:focus-visible {
    SPLASH / LANDING
    ============================================================= */
 .page-container {
+  position: relative;
+  z-index: 1;
   padding: calc(68px + env(safe-area-inset-top, 0px)) 26.67px calc(48px + env(safe-area-inset-bottom, 0px));
   max-width: 720px;
   margin: 0 auto;
@@ -365,6 +381,8 @@ a:focus-visible {
    DASHBOARD
    ============================================================= */
 .dashboard-container {
+  position: relative;
+  z-index: 1;
   padding: calc(68px + env(safe-area-inset-top, 0px)) 26.67px calc(56px + env(safe-area-inset-bottom, 0px));
   max-width: 720px;
   margin: 0 auto;
