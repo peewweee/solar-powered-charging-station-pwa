@@ -24,10 +24,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* PWA Theme */}
         <meta name="theme-color" content="#1E120B" />
         <meta name="background-color" content="#1E120B" />
+        <meta name="color-scheme" content="dark" />
 
         {/* PWA iOS Support */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="SPCS" />
 
         {/* Description */}
         <meta
