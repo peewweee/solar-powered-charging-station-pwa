@@ -36,7 +36,7 @@
    RESET / BASE
    ============================================================= */
 html {
-  background-color: var(--brand-brown-base);
+  background-color: #1E120B;
 }
 
 html, body {
@@ -47,7 +47,7 @@ html, body {
   min-height: 100dvh;
   width: 100%;
   overflow-y: auto;
-  background-color: var(--brand-brown-base);
+  background-color: #1E120B;
   background: linear-gradient(180deg, var(--brand-brown-base) 37.98%, var(--brand-yellow) 100%);
   background-repeat: no-repeat;
   background-attachment: fixed;

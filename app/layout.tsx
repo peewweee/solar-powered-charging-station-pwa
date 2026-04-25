@@ -23,7 +23,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
         {/* PWA Theme */}
         <meta name="theme-color" content="#1E120B" />
+        <meta name="theme-color" media="(prefers-color-scheme: light)" content="#1E120B" />
+        <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1E120B" />
         <meta name="background-color" content="#1E120B" />
+        <meta name="msapplication-navbutton-color" content="#1E120B" />
 
         {/* PWA iOS Support */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
