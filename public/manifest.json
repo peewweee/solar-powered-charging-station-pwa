@@ -3,7 +3,6 @@
   "short_name": "SPCS",
   "start_url": "/",
   "display": "standalone",
-  "display_override": ["fullscreen", "standalone"],
   "background_color": "#1E120B",
   "theme_color": "#1E120B",
   "icons": [
