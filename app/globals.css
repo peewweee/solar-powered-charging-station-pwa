@@ -645,6 +645,81 @@ a:focus-visible {
   opacity: 0.8;
 }
 
+/* ---------- ECO ACHIEVEMENT & GREEN METRICS (EAGM) ---------- */
+/* Tasteful sage-green accent, layered on top of the existing tile palette
+   so it sits with the rest of the dashboard rather than shouting over it. */
+.eco-card {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  background:
+    linear-gradient(135deg, rgba(120, 175, 110, 0.10) 0%, rgba(120, 175, 110, 0.02) 60%),
+    var(--tile-bg-strong);
+  border: 1px solid rgba(155, 210, 154, 0.18);
+  color: var(--brand-yellow-soft);
+  box-shadow: var(--shadow-soft);
+}
+
+.eco-icon {
+  flex-shrink: 0;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: rgba(120, 175, 110, 0.16);
+  color: #B8DDB1;            /* soft sage that pairs with the cream/maroon palette */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  animation: eco-pulse 2.6s var(--ease) infinite;
+}
+
+.eco-leaf {
+  transform-origin: 50% 80%;
+  animation: eco-sway 4.2s ease-in-out infinite;
+}
+
+.eco-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.eco-heading {
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--brand-yellow-soft);
+}
+.eco-heading strong {
+  color: #C8E8C0;
+  font-weight: 700;
+}
+.eco-heading sub {
+  font-size: 0.72em;
+  vertical-align: -2px;
+}
+
+.eco-sub {
+  font-size: 11px;
+  line-height: 1.45;
+  opacity: 0.7;
+}
+
+@keyframes eco-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(120, 175, 110, 0.32); }
+  50%      { box-shadow: 0 0 0 8px rgba(120, 175, 110, 0); }
+}
+
+@keyframes eco-sway {
+  0%, 100% { transform: rotate(-3deg); }
+  50%      { transform: rotate(3deg); }
+}
+
 @media (max-width: 600px) {
   .dashboard-container { overflow-x: auto; }
 }

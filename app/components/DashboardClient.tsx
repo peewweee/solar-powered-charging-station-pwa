@@ -225,6 +225,8 @@ export default function DashboardClient() {
   const showCountdown = sessionPhase === "active" || sessionPhase === "disconnected" || sessionPhase === "expired";
   const wifiDisplay = showCountdown ? formatTime(wifiTime) : "Offline";
 
+  const portsInUseCount = Object.values(portStatus).filter((s) => s === "in_use").length;
+
   return (
     <div className="dashboard-container">
       <h2 className="dashboard-title">Dashboard</h2>
@@ -276,6 +278,8 @@ export default function DashboardClient() {
           </div>
         </div>
       </div>
+
+      <EcoMetrics portsInUseCount={portsInUseCount} />
 
       <div
         style={{
@@ -367,6 +371,70 @@ export default function DashboardClient() {
     </div>
   );
 }
+
+/* Friendly, non-technical CO2 estimate based on currently in-use ports.
+ *
+ * This is a placeholder until the ESP32 reports real INA219-derived energy
+ * via Supabase. Each in-use USB port contributes a small fixed estimated
+ * gram value for "today" so the EAGM section feels alive. The number is
+ * intentionally modest and labeled as estimated. */
+const ECO_GRAMS_PER_ACTIVE_PORT = 3.5;
+
+const EcoMetrics = ({ portsInUseCount }: { portsInUseCount: number }) => {
+  const hasUsage = portsInUseCount > 0;
+  const co2Grams = portsInUseCount * ECO_GRAMS_PER_ACTIVE_PORT;
+  const co2Display = co2Grams.toFixed(1);
+
+  return (
+    <div className="eco-card" role="group" aria-label="Eco achievement and green metrics">
+      
+      <div className="eco-content">
+        {hasUsage ? (
+          <>
+            <p className="eco-heading">
+              You are contributing to an estimated <strong>{co2Display} g CO<sub>2</sub> savings</strong> today!
+            </p>
+            <p className="eco-sub">
+              By using Solar Connect, your charging session supports cleaner, solar-powered energy use.
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="eco-heading">
+              Start using Solar Connect to grow today&rsquo;s estimated CO<sub>2</sub> savings.
+            </p>
+            <p className="eco-sub">
+              Your eco progress will update as Solar Connect tracks active charging ports.
+            </p>
+          </>
+        )}
+      </div>
+
+        <div className="eco-icon" aria-hidden="true">
+          <svg className="eco-leaf" width="42" height="42" viewBox="0 0 24 24" fill="none">
+            <g transform="translate(-3, -1)">
+              <path
+                d="M20 4c-7 0-13 4-13 11a6 6 0 0 0 6 6c7 0 11-6 11-13 0-2-1-4-4-4z"
+                fill="currentColor"
+                fillOpacity="0.22"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M9 17c2-4 5-7 10-9"
+                stroke="currentColor"
+                strokeWidth="1.4"
+                strokeLinecap="round"
+                strokeOpacity="0.65"
+              />
+            </g>
+          </svg>
+        </div>
+
+    </div>
+  );
+};
 
 const PortItem = ({ name, status }: { name: string; status: string }) => (
   <div className="port-item">
