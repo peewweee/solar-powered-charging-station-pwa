@@ -15,10 +15,10 @@ function LandingPage() {
   return (
     <div className="page-container">
       <InstallPrompt />
-      <h3 className="title-text">Solar-Powered Charging Station</h3>
+      <h3 className="title-text">Solar Connect</h3>
       <p className="description-text">
-        The solar-powered charging station provides free device charging and Wi-Fi access,
-        promoting sustainability, connectivity, and academic productivity
+        A solar-powered charging station providing free device charging and Wi-Fi access,
+        promoting sustainability, connectivity, and academic productivity.
       </p>
 
       <button className="dashboard-button" onClick={goToDashboard}>
@@ -27,8 +27,7 @@ function LandingPage() {
 
       <div className="info-container">
         <p className="info-text">
-          This application is part of the thesis project &lsquo;Integrating Renewable Energy
-          Solutions in PUP-CEA: Solar-Powered Charging Station Offering Connectivity&rsquo;,
+          This application is part of the thesis project &lsquo;Development and Implementation of Solar-Powered Smart Charging Station with Integrated Connectivity&rsquo;,
           developed by 4th Year Computer Engineering students of the Polytechnic University of
           the Philippines.
         </p>
