@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from "react";
 
-const DISMISS_KEY = "install_prompt_dismissed";
-
 type NavigatorWithStandalone = Navigator & {
   standalone?: boolean;
 };
@@ -81,22 +79,13 @@ export default function InstallPrompt() {
       return;
     }
 
-    try {
-      if (window.sessionStorage.getItem(DISMISS_KEY) === "true") {
-        return;
-      }
-    } catch {
-      // Ignore storage access issues and continue showing the prompt.
-    }
-
     const userAgent = window.navigator.userAgent;
     const isIos = /iPhone|iPad|iPod/i.test(userAgent);
     const isSafari = /Safari/i.test(userAgent) && !/CriOS|FxiOS|EdgiOS/i.test(userAgent);
     const isAndroid = /Android/i.test(userAgent);
     const isChrome = /Chrome/i.test(userAgent) && !/Edg|OPR/i.test(userAgent);
-    const isSupportedMobileBrowser = (isIos && isSafari) || (isAndroid && isChrome);
 
-    if (!isSupportedMobileBrowser) {
+    if (!isIos && !isAndroid) {
       return;
     }
 
@@ -106,12 +95,6 @@ export default function InstallPrompt() {
   }, []);
 
   const dismissPrompt = () => {
-    try {
-      window.sessionStorage.setItem(DISMISS_KEY, "true");
-    } catch {
-      // Ignore storage access issues when dismissing.
-    }
-
     setIsClosing(true);
     window.setTimeout(() => setIsVisible(false), 220);
   };
