@@ -593,6 +593,18 @@ a:focus-visible {
   box-shadow: 0 0 0 3px rgba(241, 232, 232, 0.08);
 }
 
+.offline-banner {
+  margin: 12px 0 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(240, 168, 80, 0.12);
+  border: 1px solid rgba(240, 168, 80, 0.35);
+  color: #f0a850;
+  font-size: 12px;
+  line-height: 1.4;
+  text-align: center;
+}
+
 .port-line {
   height: 1px;
   background: linear-gradient(90deg,
