@@ -525,10 +525,10 @@ a:focus-visible {
   font-weight: 700;
   line-height: 1.15;
   letter-spacing: 0.01em;
+  margin-bottom: 10px;
 }
 
 .port-list-container {
-  margin-top: 10px;
   padding: 16px;
   width: 100%;
   border-radius: var(--radius-md);
@@ -633,6 +633,29 @@ a:focus-visible {
   font-weight: 700;
   letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
+}
+
+/* ---------- OFFLINE NOTICE ----------
+   Shown in tiles whose data comes from the ESP32 (battery, ports, eco
+   metrics) when station_state.updated_at hasn't refreshed in ~30 s.
+   Keeps the surrounding section/tile shape so the layout doesn't jump. */
+.tile-offline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  background: var(--tile-bg-strong);
+  border: 1px dashed var(--tile-ring);
+  color: var(--brand-yellow-soft);
+  opacity: 0.78;
+  font-size: 13px;
+  line-height: 1.5;
+  font-style: italic;
+  min-height: 64px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* Skeleton while weather loads */

@@ -13,6 +13,17 @@ import {
   type PortStatus,
 } from "../lib/station-state";
 
+/* The ESP32 pushes battery telemetry to station_state every 5 s. If the
+ * row's updated_at is older than this window we treat the station as
+ * offline — covers both the "ESP32 unplugged" case and the "ESP32 up
+ * but can't reach upstream Wi-Fi" case in one check. The window is
+ * intentionally 6× the firmware push interval to ride out a single
+ * dropped HTTP request without flickering between online/offline. */
+const STATION_STALE_AFTER_MS = 30 * 1000;
+
+const STATION_OFFLINE_MESSAGE =
+  "The system is currently offline or can't connect to Wi-Fi.";
+
 export default function DashboardClient() {
   const ACTIVE_REFRESH_INTERVAL_MS = 3000;
   const RECOVERY_REFRESH_INTERVAL_MS = 2000;
@@ -30,6 +41,9 @@ export default function DashboardClient() {
 
   const [portStatus, setPortStatus] = useState<Partial<Record<PortKey, PortStatus>>>({});
   const [batteryPercent, setBatteryPercent] = useState<number | null>(null);
+  const [batteryUpdatedAt, setBatteryUpdatedAt] = useState<string | null>(null);
+  const [hasFetchedStationOnce, setHasFetchedStationOnce] = useState(false);
+  const [isStationOffline, setIsStationOffline] = useState(false);
 
   useEffect(() => {
     let retryTimeout: number | null = null;
@@ -192,10 +206,15 @@ export default function DashboardClient() {
         if (snapshot.batteryPercent !== null) {
           setBatteryPercent(Math.round(snapshot.batteryPercent));
         }
+        setBatteryUpdatedAt(snapshot.batteryUpdatedAt);
       } catch (error) {
         // Keep last-known values on transient failures; the dashboard
         // shouldn't flash "all available" just because a poll missed.
         console.warn("Failed to refresh station snapshot", error);
+      } finally {
+        if (!cancelled) {
+          setHasFetchedStationOnce(true);
+        }
       }
     };
 
@@ -213,6 +232,31 @@ export default function DashboardClient() {
       document.removeEventListener("visibilitychange", onVisible);
     };
   }, []);
+
+  // Re-evaluate station online/offline whenever batteryUpdatedAt changes
+  // and on a 5 s tick (so we still notice when the timestamp stops
+  // refreshing — without the tick, no state change = no re-render =
+  // dashboard wouldn't realize the ESP32 went silent).
+  useEffect(() => {
+    if (!hasFetchedStationOnce) return;
+
+    const evaluate = () => {
+      if (!batteryUpdatedAt) {
+        setIsStationOffline(true);
+        return;
+      }
+      const ts = Date.parse(batteryUpdatedAt);
+      if (!Number.isFinite(ts)) {
+        setIsStationOffline(true);
+        return;
+      }
+      setIsStationOffline(Date.now() - ts > STATION_STALE_AFTER_MS);
+    };
+
+    evaluate();
+    const interval = window.setInterval(evaluate, 5000);
+    return () => window.clearInterval(interval);
+  }, [batteryUpdatedAt, hasFetchedStationOnce]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -265,21 +309,25 @@ export default function DashboardClient() {
 
       <div className="port-container">
         <h3 className="port-title">Available Ports</h3>
-        <div className="port-list-container">
-          <div className="port-left-items">
-            <PortItem name="USB-A 1" status={portDisplayStatus(portStatus.usb_a_1)} />
-            <PortItem name="USB-A 2" status={portDisplayStatus(portStatus.usb_a_2)} />
-            <PortItem name="Outlet" status={portDisplayStatus(portStatus.outlet)} />
-          </div>
+        {isStationOffline ? (
+          <div className="tile-offline">{STATION_OFFLINE_MESSAGE}</div>
+        ) : (
+          <div className="port-list-container">
+            <div className="port-left-items">
+              <PortItem name="USB-A 1" status={portDisplayStatus(portStatus.usb_a_1)} />
+              <PortItem name="USB-A 2" status={portDisplayStatus(portStatus.usb_a_2)} />
+              <PortItem name="Outlet" status={portDisplayStatus(portStatus.outlet)} />
+            </div>
 
-          <div className="port-right-items">
-            <PortItem name="USB-C 1" status={portDisplayStatus(portStatus.usb_c_1)} />
-            <PortItem name="USB-C 2" status={portDisplayStatus(portStatus.usb_c_2)} />
+            <div className="port-right-items">
+              <PortItem name="USB-C 1" status={portDisplayStatus(portStatus.usb_c_1)} />
+              <PortItem name="USB-C 2" status={portDisplayStatus(portStatus.usb_c_2)} />
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
-      <EcoMetrics portsInUseCount={portsInUseCount} />
+      <EcoMetrics portsInUseCount={portsInUseCount} isOffline={isStationOffline} />
 
       <div
         style={{
@@ -293,47 +341,51 @@ export default function DashboardClient() {
       >
         <div className="metric-column">
           <h3 className="port-title">Battery Percentage</h3>
-          <div className="metric-tile">
-            {batteryPercent === null ? (
-              <div style={{ display: "flex", alignItems: "center", gap: "14px", width: "100%" }}>
-                <span className="skeleton-line sm" style={{ height: "20px" }} />
-                <span className="skeleton-line md" />
-              </div>
-            ) : (
-              <div className="metric-tile-inner">
-                <BatteryGauge
-                  value={batteryPercent}
-                  size={60}
-                  customization={{
-                    batteryBody: {
-                      strokeColor: "#FFFFFF",
-                      strokeWidth: 3,
-                      fill: "transparent",
-                      cornerRadius: 4,
-                    },
-                    batteryCap: {
-                      fill: "transparent",
-                      strokeColor: "#FFFFFF",
-                      strokeWidth: 3,
-                      cornerRadius: 2,
-                    },
-                    batteryMeter: {
-                      fill: "#FFFFFF",
-                      lowBatteryFill: "#FFFFFF",
-                      noOfCells: 1,
-                    },
-                    readingText: {
-                      lightContrastColor: "#FFFFFF",
-                      darkContrastColor: "#FFFFFF",
-                      fontSize: 0,
-                    },
-                  }}
-                />
+          {isStationOffline ? (
+            <div className="tile-offline">{STATION_OFFLINE_MESSAGE}</div>
+          ) : (
+            <div className="metric-tile">
+              {batteryPercent === null ? (
+                <div style={{ display: "flex", alignItems: "center", gap: "14px", width: "100%" }}>
+                  <span className="skeleton-line sm" style={{ height: "20px" }} />
+                  <span className="skeleton-line md" />
+                </div>
+              ) : (
+                <div className="metric-tile-inner">
+                  <BatteryGauge
+                    value={batteryPercent}
+                    size={60}
+                    customization={{
+                      batteryBody: {
+                        strokeColor: "#FFFFFF",
+                        strokeWidth: 3,
+                        fill: "transparent",
+                        cornerRadius: 4,
+                      },
+                      batteryCap: {
+                        fill: "transparent",
+                        strokeColor: "#FFFFFF",
+                        strokeWidth: 3,
+                        cornerRadius: 2,
+                      },
+                      batteryMeter: {
+                        fill: "#FFFFFF",
+                        lowBatteryFill: "#FFFFFF",
+                        noOfCells: 1,
+                      },
+                      readingText: {
+                        lightContrastColor: "#FFFFFF",
+                        darkContrastColor: "#FFFFFF",
+                        fontSize: 0,
+                      },
+                    }}
+                  />
 
-                <span className="metric-value">{batteryPercent}%</span>
-              </div>
-            )}
-          </div>
+                  <span className="metric-value">{batteryPercent}%</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="metric-column">
@@ -380,14 +432,30 @@ export default function DashboardClient() {
  * intentionally modest and labeled as estimated. */
 const ECO_GRAMS_PER_ACTIVE_PORT = 3.5;
 
-const EcoMetrics = ({ portsInUseCount }: { portsInUseCount: number }) => {
+const EcoMetrics = ({
+  portsInUseCount,
+  isOffline,
+}: {
+  portsInUseCount: number;
+  isOffline: boolean;
+}) => {
+  if (isOffline) {
+    // Estimated CO2 is derived from port_state, which comes from the
+    // ESP32 — if the station is offline the number would be misleading.
+    return (
+      <div className="tile-offline" style={{ marginTop: 16 }}>
+        {STATION_OFFLINE_MESSAGE}
+      </div>
+    );
+  }
+
   const hasUsage = portsInUseCount > 0;
   const co2Grams = portsInUseCount * ECO_GRAMS_PER_ACTIVE_PORT;
   const co2Display = co2Grams.toFixed(1);
 
   return (
     <div className="eco-card" role="group" aria-label="Eco achievement and green metrics">
-      
+
       <div className="eco-content">
         {hasUsage ? (
           <>
