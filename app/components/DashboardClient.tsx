@@ -13,14 +13,6 @@ import {
   type PortStatus,
 } from "../lib/station-state";
 
-/* The ESP32 pushes battery telemetry to station_state every 5 s. If the
- * row's updated_at is older than this window we treat the station as
- * offline — covers both the "ESP32 unplugged" case and the "ESP32 up
- * but can't reach upstream Wi-Fi" case in one check. The window is
- * intentionally 6× the firmware push interval to ride out a single
- * dropped HTTP request without flickering between online/offline. */
-const STATION_STALE_AFTER_MS = 30 * 1000;
-
 export default function DashboardClient() {
   const ACTIVE_REFRESH_INTERVAL_MS = 3000;
   const RECOVERY_REFRESH_INTERVAL_MS = 2000;
@@ -44,7 +36,6 @@ export default function DashboardClient() {
   const [batteryPercent, setBatteryPercent] = useState<number | null>(null);
   const [batteryUpdatedAt, setBatteryUpdatedAt] = useState<string | null>(null);
   const [hasFetchedStationOnce, setHasFetchedStationOnce] = useState(false);
-  const [isStationOffline, setIsStationOffline] = useState(false);
 
   useEffect(() => {
     let retryTimeout: number | null = null;
@@ -199,21 +190,48 @@ export default function DashboardClient() {
     const STATION_REFRESH_INTERVAL_MS = 5000;
     let cancelled = false;
 
+    /* Realtime-only mode: the dashboard reflects what's CURRENTLY being
+     * pushed by the ESP32. If Supabase has data but it's older than the
+     * window below (ESP32 silent), or if the fetch fails outright, we
+     * clear everything so no stale numbers linger on screen. */
+    const STALE_AFTER_MS = 30 * 1000;
+
+    const clearAll = () => {
+      setPortStatus({});
+      setPortsDailyInUseSeconds({});
+      setAcEnergyWhToday(0);
+      setBatteryPercent(null);
+      setBatteryUpdatedAt(null);
+    };
+
     const refresh = async () => {
       try {
         const snapshot = await fetchStationSnapshot();
         if (cancelled) return;
-        setPortStatus(snapshot.ports);
-        setPortsDailyInUseSeconds(snapshot.portsDailyInUseSeconds);
-        setAcEnergyWhToday(snapshot.acEnergyWhToday);
-        if (snapshot.batteryPercent !== null) {
-          setBatteryPercent(Math.round(snapshot.batteryPercent));
+
+        const ts = snapshot.batteryUpdatedAt
+          ? Date.parse(snapshot.batteryUpdatedAt)
+          : NaN;
+        const isStale =
+          !Number.isFinite(ts) || Date.now() - ts > STALE_AFTER_MS;
+
+        if (isStale) {
+          clearAll();
+        } else {
+          setPortStatus(snapshot.ports);
+          setPortsDailyInUseSeconds(snapshot.portsDailyInUseSeconds);
+          setAcEnergyWhToday(snapshot.acEnergyWhToday);
+          setBatteryPercent(
+            snapshot.batteryPercent !== null
+              ? Math.round(snapshot.batteryPercent)
+              : null,
+          );
+          setBatteryUpdatedAt(snapshot.batteryUpdatedAt);
         }
-        setBatteryUpdatedAt(snapshot.batteryUpdatedAt);
       } catch (error) {
-        // Keep last-known values on transient failures; the dashboard
-        // shouldn't flash "all available" just because a poll missed.
         console.warn("Failed to refresh station snapshot", error);
+        if (cancelled) return;
+        clearAll();
       } finally {
         if (!cancelled) {
           setHasFetchedStationOnce(true);
@@ -235,31 +253,6 @@ export default function DashboardClient() {
       document.removeEventListener("visibilitychange", onVisible);
     };
   }, []);
-
-  // Re-evaluate station online/offline whenever batteryUpdatedAt changes
-  // and on a 5 s tick (so we still notice when the timestamp stops
-  // refreshing — without the tick, no state change = no re-render =
-  // dashboard wouldn't realize the ESP32 went silent).
-  useEffect(() => {
-    if (!hasFetchedStationOnce) return;
-
-    const evaluate = () => {
-      if (!batteryUpdatedAt) {
-        setIsStationOffline(true);
-        return;
-      }
-      const ts = Date.parse(batteryUpdatedAt);
-      if (!Number.isFinite(ts)) {
-        setIsStationOffline(true);
-        return;
-      }
-      setIsStationOffline(Date.now() - ts > STATION_STALE_AFTER_MS);
-    };
-
-    evaluate();
-    const interval = window.setInterval(evaluate, 5000);
-    return () => window.clearInterval(interval);
-  }, [batteryUpdatedAt, hasFetchedStationOnce]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -309,12 +302,6 @@ export default function DashboardClient() {
       ) : null}
 
       <div className="line-separator"></div>
-
-      {isStationOffline ? (
-        <p className="offline-banner">
-          Uh-oh! System is currently offline. You&rsquo;re viewing the last recorded data
-        </p>
-      ) : null}
 
       <div className="port-container">
         <h3 className="port-title">Available Ports</h3>
